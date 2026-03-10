@@ -41,11 +41,52 @@
           "name": "Google Sheets Trigger account"
         }
       }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5f1d5c86-33e5-4dad-b2fe-bac73c7e07a6",
+              "name": "GiaThue_Dep",
+              "value": "={{ $json[\"Giá thuê phòng\"].toLocaleString('vi-VN') }}",
+              "type": "string"
+            },
+            {
+              "id": "628bdee6-7d70-419a-9e16-623b02dd9941",
+              "name": "TienCoc_Dep",
+              "value": "={{ $json[\"Tiền đặt cọc (VNĐ)\"].toLocaleString('vi-VN') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "909bc0a1-881c-479b-a3c2-dc81e46b6e73",
+      "name": "Edit Fields"
     }
   ],
   "pinData": {},
   "connections": {
     "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
       "main": [
         []
       ]
@@ -56,7 +97,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "199bfda7-8505-47ba-a879-7c730bc5ed28",
+  "versionId": "cb6efb21-e6b6-4664-9400-f246d8553c34",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "75d878436d3383106d83217020ad7d834403a7cfc2e381de67c81a832ea2ab20"
