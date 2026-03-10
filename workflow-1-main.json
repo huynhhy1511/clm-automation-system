@@ -71,6 +71,32 @@
       ],
       "id": "909bc0a1-881c-479b-a3c2-dc81e46b6e73",
       "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1UseGXjCZdM-LLbhpWsediPRtW6MT6t4l",
+          "mode": "id"
+        },
+        "name": "=Hợp đồng thuê nhà-{{ $json['Họ và tên người thuê'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        400,
+        0
+      ],
+      "id": "c770adf1-85ea-4752-a4af-e420dd411a61",
+      "name": "Copy file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "B8k2eSQVXorSc2Qo",
+          "name": "Google Drive account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -88,6 +114,17 @@
     },
     "Edit Fields": {
       "main": [
+        [
+          {
+            "node": "Copy file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy file": {
+      "main": [
         []
       ]
     }
@@ -97,7 +134,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "cb6efb21-e6b6-4664-9400-f246d8553c34",
+  "versionId": "32199b8f-7896-4d01-8385-18002add513b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "75d878436d3383106d83217020ad7d834403a7cfc2e381de67c81a832ea2ab20"
