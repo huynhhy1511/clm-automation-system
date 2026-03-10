@@ -1,0 +1,66 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1zKD6o4LOC6eowdikdLgcHW_1Bpco9G-Nkm8KOxZ2bao",
+          "mode": "list",
+          "cachedResultName": "Database_thue_nha",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zKD6o4LOC6eowdikdLgcHW_1Bpco9G-Nkm8KOxZ2bao/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1216453348,
+          "mode": "list",
+          "cachedResultName": "Câu trả lời biểu mẫu 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zKD6o4LOC6eowdikdLgcHW_1Bpco9G-Nkm8KOxZ2bao/edit#gid=1216453348"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9ccace7b-2400-4fcb-b9c4-a8141a1e5094",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "UZtgGKSQm5KlEnAr",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "199bfda7-8505-47ba-a879-7c730bc5ed28",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75d878436d3383106d83217020ad7d834403a7cfc2e381de67c81a832ea2ab20"
+  },
+  "id": "i5nKO7aBizMrVWiYJv6nl",
+  "tags": []
+}
