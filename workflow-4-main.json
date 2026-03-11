@@ -55,6 +55,210 @@
     },
     {
       "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1BEYHUdfBxRTsrkSf4bd11-XKLqXRYZxXXuhZtilIwhk",
+          "mode": "list",
+          "cachedResultName": "Trạng thái thanh toán",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BEYHUdfBxRTsrkSf4bd11-XKLqXRYZxXXuhZtilIwhk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BEYHUdfBxRTsrkSf4bd11-XKLqXRYZxXXuhZtilIwhk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "maPhong",
+            "thangThanhToan"
+          ],
+          "schema": [
+            {
+              "id": "tenKhach",
+              "displayName": "tenKhach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maPhong",
+              "displayName": "maPhong",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thangThanhToan",
+              "displayName": "thangThanhToan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "soTien",
+              "displayName": "soTien",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "anhBill",
+              "displayName": "anhBill",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "trangThai",
+              "displayName": "trangThai",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3415fb06-daaa-440a-972c-4b46eb5ba01d",
+      "name": "Cập nhật trạng thái thanh toán",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iJ4Hv7SZ2ZusUUAy",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Chuẩn bị dữ liệu\").item.json.email }}",
+        "subject": "Xác nhận thanh toán - Biên lai điện tử",
+        "message": "=Kính gửi {{ $(\"Chuẩn bị dữ liệu\").item.json.tenKhach }},\n\nCảm ơn bạn đã thanh toán tiền thuê phòng {{ $(\"Chuẩn bị dữ liệu\").item.json.maPhong }} cho tháng {{ $(\"Chuẩn bị dữ liệu\").item.json.thangThanhToan }}.\n\nSố tiền: {{ $(\"Chuẩn bị dữ liệu\").item.json.soTien }} VNĐ\nTrạng thái: Đã thanh toán\n\nĐây là biên lai điện tử xác nhận giao dịch của bạn.\n\nTrân trọng,\nBan quản lý",
+        "options": {}
+      },
+      "id": "c2cac570-3efc-4cbb-a97d-3f49f5bd51e1",
+      "name": "Gửi Email biên lai",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        368
+      ],
+      "webhookId": "bb157193-2da8-4dff-bbf9-13e808b8c758",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "sZp1x4JvwtsXw1D7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "tenKhach",
+              "value": "={{ $json['Họ và tên'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "email",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "maPhong",
+              "value": "={{ $json['Mã phòng'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "thangThanhToan",
+              "value": "={{ $json['Tháng thanh toán (MM/YYYY)'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "soTien",
+              "value": "={{ $json['Số tiền đã chuyển'] }}",
+              "type": "number"
+            },
+            {
+              "id": "id-6",
+              "name": "anhBill",
+              "value": "==IMAGE(\"{{ $json.anhBillUrl }}\")",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "trangThai",
+              "value": "Đã thanh toán",
+              "type": "string"
+            },
+            {
+              "id": "cf6862c3-eb04-49e0-a8fd-8aa30e0efc6a",
+              "name": "thoiGian",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "48ac0eef-c672-4997-a651-201086316d44",
+      "name": "Chuẩn bị dữ liệu",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        432,
+        368
+      ]
+    },
+    {
+      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const files = $input.item.json[\"Ảnh chụp màn hình chuyển khoản\"] || [];\nconst fileUrls = files.map(f => f.url || \"\").filter(url => url).join(\", \");\n\nreturn {\n  ...($input.item.json),\n  anhBillUrl: fileUrls\n};"
       },
@@ -81,9 +285,37 @@
         ]
       ]
     },
+    "Cập nhật trạng thái thanh toán": {
+      "main": [
+        [
+          {
+            "node": "Gửi Email biên lai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuẩn bị dữ liệu": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật trạng thái thanh toán",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Xử lý ảnh bill": {
       "main": [
-        []
+        [
+          {
+            "node": "Chuẩn bị dữ liệu",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -91,7 +323,7 @@
   "settings": {
     "availableInMCP": false
   },
-  "versionId": "9163abe4-46ef-4502-b5ad-193c63f910a3",
+  "versionId": "7eadb3a6-8f3e-4bd9-8bd4-60f4d12270b8",
   "meta": {
     "instanceId": "58d5300b14e5f9edfc9743ae4534a73e532ae7000f5540772babff5fe8093248"
   },
