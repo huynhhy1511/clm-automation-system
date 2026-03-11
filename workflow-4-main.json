@@ -1,0 +1,75 @@
+{
+  "name": "workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "xac-nhan-thanh-toan",
+        "formTitle": "Xác nhận chuyển khoản",
+        "formDescription": "Vui lòng điền thông tin xác nhận thanh toán tiền thuê phòng",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Họ và tên",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "example@gmail.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Mã phòng",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tháng thanh toán (MM/YYYY)",
+              "placeholder": "01/2024",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Số tiền đã chuyển",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Ảnh chụp màn hình chuyển khoản",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ed7dd2b4-464e-4ca2-8ab9-2ac5be45ea30",
+      "name": "Form Xác nhận chuyển khoản",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        368
+      ],
+      "webhookId": "66521d4c-3dbb-4e0f-9f58-58ee5d252e49"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form Xác nhận chuyển khoản": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "availableInMCP": false
+  },
+  "versionId": "93c46b5c-0ca1-4364-90ad-7671e448fb0d",
+  "meta": {
+    "instanceId": "58d5300b14e5f9edfc9743ae4534a73e532ae7000f5540772babff5fe8093248"
+  },
+  "id": "JcNrk28goHtojNtj",
+  "tags": []
+}
