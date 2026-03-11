@@ -52,11 +52,36 @@
         368
       ],
       "webhookId": "66521d4c-3dbb-4e0f-9f58-58ee5d252e49"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const files = $input.item.json[\"Ảnh chụp màn hình chuyển khoản\"] || [];\nconst fileUrls = files.map(f => f.url || \"\").filter(url => url).join(\", \");\n\nreturn {\n  ...($input.item.json),\n  anhBillUrl: fileUrls\n};"
+      },
+      "id": "9679a6a1-57bd-47fc-bd3f-a31ee0a011b7",
+      "name": "Xử lý ảnh bill",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        368
+      ]
     }
   ],
   "pinData": {},
   "connections": {
     "Form Xác nhận chuyển khoản": {
+      "main": [
+        [
+          {
+            "node": "Xử lý ảnh bill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xử lý ảnh bill": {
       "main": [
         []
       ]
@@ -66,7 +91,7 @@
   "settings": {
     "availableInMCP": false
   },
-  "versionId": "93c46b5c-0ca1-4364-90ad-7671e448fb0d",
+  "versionId": "9163abe4-46ef-4502-b5ad-193c63f910a3",
   "meta": {
     "instanceId": "58d5300b14e5f9edfc9743ae4534a73e532ae7000f5540772babff5fe8093248"
   },
