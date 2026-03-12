@@ -1,0 +1,88 @@
+{
+  "name": "CLM workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFile",
+        "fileToWatch": {
+          "__rl": true,
+          "value": "1agi4ZVt9OINuSBRNZ6w4ncANOgd2sQIXRg-PuExhHmU",
+          "mode": "id"
+        }
+      },
+      "name": "Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -144
+      ],
+      "id": "2c6bbaf2-70e9-4eb9-9532-6d88f45f266b",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{ $json.id }}",
+        "options": {}
+      },
+      "name": "Download as PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        -144
+      ],
+      "id": "7e10c27e-425a-4bbe-b493-41b7be8fe90c",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download as PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download as PDF": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "902d122f-ec65-4381-91ea-1b27bf09089f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75d878436d3383106d83217020ad7d834403a7cfc2e381de67c81a832ea2ab20"
+  },
+  "id": "TzBH5JkWi3rOjbo1Asi3J",
+  "tags": []
+}
