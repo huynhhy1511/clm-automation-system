@@ -68,6 +68,204 @@
         64
       ],
       "id": "2ba63352-c2b1-43ce-b835-169f8ff517bd"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1zKD6o4LOC6eowdikdLgcHW_1Bpco9G-Nkm8KOxZ2bao",
+          "mode": "list",
+          "cachedResultName": "Database_thue_nha",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zKD6o4LOC6eowdikdLgcHW_1Bpco9G-Nkm8KOxZ2bao/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1216453348,
+          "mode": "list",
+          "cachedResultName": "Câu trả lời biểu mẫu 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zKD6o4LOC6eowdikdLgcHW_1Bpco9G-Nkm8KOxZ2bao/edit#gid=1216453348"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Số điện thoại": "={{ $('Lookup Sheet').item.json['Số điện thoại'] }}"
+          },
+          "matchingColumns": [
+            "Số điện thoại"
+          ],
+          "schema": [
+            {
+              "id": "Dấu thời gian",
+              "displayName": "Dấu thời gian",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Họ và tên người thuê",
+              "displayName": "Họ và tên người thuê",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ngày tháng năm sinh",
+              "displayName": "Ngày tháng năm sinh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Số CCCD / CMND",
+              "displayName": "Số CCCD / CMND",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ngày cấp CCCD",
+              "displayName": "Ngày cấp CCCD",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nơi cấp",
+              "displayName": "Nơi cấp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Số điện thoại",
+              "displayName": "Số điện thoại",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email nhận hợp đồng",
+              "displayName": "Email nhận hợp đồng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phòng số",
+              "displayName": "Phòng số",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Giá thuê phòng",
+              "displayName": "Giá thuê phòng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tiền đặt cọc (VNĐ)",
+              "displayName": "Tiền đặt cọc (VNĐ)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Thời hạn thuê",
+              "displayName": "Thời hạn thuê",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ngày bắt đầu tính tiền",
+              "displayName": "Ngày bắt đầu tính tiền",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Update Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "a9118967-cf75-4f36-90e2-9a7612275de5",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rlY44zPZTuNO9u8R",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=🔔 [HỆ THỐNG CLM] - THÔNG BÁO HOÀN TẤT ------------------------------------- ✅ Khách hàng: {{ $json['Họ và tên người thuê'] }} 🏠 Phòng số: {{ $json['Phòng số'] }} 📱 Số điện thoại: {{ $json['Số điện thoại'] }}  🎉 Trạng thái: Đã xác nhận chốt hợp đồng thành công! Hệ thống đã tự động cập nhật Database.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -64,
+        160
+      ],
+      "id": "7164a6fb-9937-4eb5-b85f-c45a170f68f8",
+      "name": "Send a text message",
+      "webhookId": "580158e5-ed25-473d-89f4-eaa45e545728",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -96,6 +294,22 @@
     },
     "Kiểm tra điều kiện": {
       "main": [
+        [
+          {
+            "node": "Update Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sheet": {
+      "main": [
         []
       ]
     }
@@ -105,7 +319,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "c135af81-f44c-4717-afc6-faaeaa48ffca",
+  "versionId": "0b12d841-b927-4b6b-99c0-7092131a4553",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "75d878436d3383106d83217020ad7d834403a7cfc2e381de67c81a832ea2ab20"
