@@ -3,124 +3,42 @@
   "nodes": [
     {
       "parameters": {
-        "path": "bao-su-co",
-        "formTitle": "Báo cáo sự cố bảo trì",
-        "formDescription": "Vui lòng mô tả sự cố để chúng tôi hỗ trợ bạn nhanh nhất",
-        "formFields": {
-          "values": [
-            {
-              "fieldLabel": "Họ và tên",
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Email",
-              "fieldType": "email",
-              "placeholder": "example@gmail.com",
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Mã phòng",
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Loại sự cố",
-              "fieldType": "dropdown",
-              "fieldOptions": {
-                "values": [
-                  {
-                    "option": "Điện"
-                  },
-                  {
-                    "option": "Nước"
-                  },
-                  {
-                    "option": "Điều hòa"
-                  },
-                  {
-                    "option": "Bồn cầu"
-                  },
-                  {
-                    "option": "Khác"
-                  }
-                ]
-              }
-            },
-            {
-              "fieldLabel": "Mức độ khẩn cấp",
-              "fieldType": "dropdown",
-              "fieldOptions": {
-                "values": [
-                  {
-                    "option": "Bình thường"
-                  },
-                  {
-                    "option": "Khẩn cấp"
-                  }
-                ]
-              }
-            },
-            {
-              "fieldLabel": "Mô tả chi tiết",
-              "fieldType": "textarea"
-            },
-            {
-              "fieldLabel": "Ảnh chụp sự cố",
-              "fieldType": "file"
-            }
-          ]
-        },
-        "options": {
-          "appendAttribution": false
-        }
-      },
-      "id": "7ad31bd7-4f1a-4eb6-967a-37acd4e0edc2",
-      "name": "Form Báo sự cố",
-      "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.1,
-      "position": [
-        -16,
-        1296
-      ],
-      "webhookId": "ee4393ce-6880-40f5-8322-e990e4e5a5e5"
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
               "id": "id-1",
               "name": "tenKhach",
-              "value": "={{ $json['Họ và tên'] }}",
+              "value": "={{ $json.body['Họ và tên'] }}",
               "type": "string"
             },
             {
               "id": "id-2",
               "name": "email",
-              "value": "={{ $json.Email }}",
+              "value": "={{ $json.body.Email }}",
               "type": "string"
             },
             {
               "id": "id-3",
               "name": "maPhong",
-              "value": "={{ $json['Mã phòng'] }}",
+              "value": "={{ $json.body['Mã phòng'] }}",
               "type": "string"
             },
             {
               "id": "id-4",
               "name": "loaiSuCo",
-              "value": "={{ $json['Loại sự cố'] }}",
+              "value": "={{ $json.body['Loại sự cố'] }}",
               "type": "string"
             },
             {
               "id": "id-5",
               "name": "mucDoKhanCap",
-              "value": "={{ $json['Mức độ khẩn cấp'] }}",
+              "value": "={{ $json.body['Mức độ khẩn cấp'] }}",
               "type": "string"
             },
             {
               "id": "id-6",
               "name": "moTa",
-              "value": "={{ $json['Mô tả chi tiết'] }}",
+              "value": "={{ $json.body['Mô tả chi tiết'] }}",
               "type": "string"
             },
             {
@@ -133,131 +51,14 @@
         },
         "options": {}
       },
-      "id": "327ac1cc-5de9-4533-ae60-989ea5aef067",
+      "id": "4714fa67-86c8-43b1-98fe-51313b7d5f51",
       "name": "Chuẩn bị dữ liệu sự cố",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        208,
-        1296
+        -1968,
+        592
       ]
-    },
-    {
-      "parameters": {
-        "operation": "appendOrUpdate",
-        "documentId": {
-          "__rl": true,
-          "value": "1ezsKOtVHj0mFF7hbJYQM6dY5qCCFQQ-8GrKGdKGFN4g",
-          "mode": "list",
-          "cachedResultName": "Bảo trì",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ezsKOtVHj0mFF7hbJYQM6dY5qCCFQQ-8GrKGdKGFN4g/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Trang tính1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ezsKOtVHj0mFF7hbJYQM6dY5qCCFQQ-8GrKGdKGFN4g/edit#gid=0"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {
-            "tenKhach": "tenKhach",
-            "email": "email",
-            "maPhong": "maPhong",
-            "loaiSuCo": "loaiSuCo",
-            "mucDoKhanCap": "mucDoKhanCap",
-            "moTa": "moTa",
-            "ngayBaoCao": "ngayBaoCao"
-          },
-          "matchingColumns": [
-            "maPhong"
-          ],
-          "schema": [
-            {
-              "id": "tenKhach",
-              "displayName": "tenKhach",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "email",
-              "displayName": "email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "maPhong",
-              "displayName": "maPhong",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "loaiSuCo",
-              "displayName": "loaiSuCo",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "mucDoKhanCap",
-              "displayName": "mucDoKhanCap",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "moTa",
-              "displayName": "moTa",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "ngayBaoCao",
-              "displayName": "ngayBaoCao",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "id": "662e6100-6eb3-43c5-8e8d-228106e388d4",
-      "name": "Lưu vào Sheet Bảo trì",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        432,
-        1296
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "n3o27kggT3KKwBZs",
-          "name": "Google Sheets account"
-        }
-      }
     },
     {
       "parameters": {
@@ -283,13 +84,13 @@
         },
         "options": {}
       },
-      "id": "06e29a42-d2d0-4e7f-b0a2-9bc5c4e7f612",
+      "id": "13b78c97-b66d-4812-9792-ef3c23982075",
       "name": "Kiểm tra mức độ khẩn cấp",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        656,
-        1296
+        -1568,
+        592
       ]
     },
     {
@@ -298,21 +99,15 @@
         "text": "=🚨 SỰ CỐ KHẨN CẤP!\n\nPhòng: {{ $json.maPhong }}\nKhách: {{ $json.tenKhach }}\nEmail khách hàng: {{ $json.email }}\nLoại sự cố: {{ $json.loaiSuCo }}\nMô tả: {{ $json.moTa }}\nThời gian: {{ $json.ngayBaoCao }}\n\n\nVui lòng xử lý ngay!",
         "additionalFields": {}
       },
-      "id": "88ee26b8-b65e-4bdb-970c-2490354cdd8e",
+      "id": "1fcb7bcd-1094-43d4-92c6-aca6ee3e91d5",
       "name": "Thông báo Telegram khẩn cấp",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1040,
-        1200
+        -1040,
+        400
       ],
-      "webhookId": "450a4620-13c5-45f2-a5ff-ab6b86dbedba",
-      "credentials": {
-        "telegramApi": {
-          "id": "9wrs9jm5h1somnPb",
-          "name": "Telegram account"
-        }
-      }
+      "webhookId": "450a4620-13c5-45f2-a5ff-ab6b86dbedba"
     },
     {
       "parameters": {
@@ -321,21 +116,15 @@
         "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #d32f2f;\">🚨 Sự cố khẩn cấp đã được ghi nhận</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố <strong>KHẨN CẤP</strong> từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #ffebee; padding: 15px; border-left: 4px solid #d32f2f; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p style=\"color: #d32f2f; font-weight: bold;\">⚡ Thợ sửa chữa sẽ đến trong vòng 2-4 giờ tới.</p>\n  <p>Xin cảm ơn sự thông báo kịp thời của bạn!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
         "options": {}
       },
-      "id": "e8cee870-6672-4070-8a96-53eaaeee8778",
+      "id": "ba868106-c3d5-42c3-8d4d-6d98acf1e251",
       "name": "Email phản hồi khách hàng",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        864,
-        1200
+        -1248,
+        400
       ],
-      "webhookId": "ce3cfbba-a3a5-4c7b-b6a6-00d60fcc7057",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "MRDZcQMnqNl0ZV28",
-          "name": "Gmail account 2"
-        }
-      }
+      "webhookId": "ce3cfbba-a3a5-4c7b-b6a6-00d60fcc7057"
     },
     {
       "parameters": {
@@ -344,52 +133,102 @@
         "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #1976d2;\">✅ Đã ghi nhận sự cố</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #e3f2fd; padding: 15px; border-left: 4px solid #1976d2; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p>🔧 Thợ sửa chữa sẽ liên hệ và đến trong vòng <strong>24 giờ tới</strong>.</p>\n  <p>Cảm ơn bạn đã thông báo!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
         "options": {}
       },
-      "id": "1fdf30bc-41a8-486e-bada-6f95d2e9e68e",
+      "id": "186b82cd-17ad-44ab-b599-18a27da8d29d",
       "name": "Email phản hồi bình thường",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        864,
-        1392
+        -1248,
+        768
       ],
-      "webhookId": "1f04fb70-2d7f-424f-aef3-7e034886ee7b",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "MRDZcQMnqNl0ZV28",
-          "name": "Gmail account 2"
-        }
-      }
+      "webhookId": "1f04fb70-2d7f-424f-aef3-7e034886ee7b"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bao-cao-su-co",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b9060506-8696-443f-83b2-61e6ce661559",
+      "name": "Nhận báo cáo từ React",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2160,
+        592
+      ],
+      "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "incidents"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tenKhach": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.tenKhach }}",
+            "email": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.email }}",
+            "maPhong": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.maPhong }}",
+            "loaiSuCo": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.loaiSuCo }}",
+            "mucDoKhanCap": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.mucDoKhanCap }}",
+            "moTa": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.moTa }}",
+            "ngayBaoCao": "={{ $('Chuẩn bị dữ liệu sự cố').item.json.ngayBaoCao }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "3ac46405-2fe7-4266-9e58-521076183065",
+      "name": "Lưu vào PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1776,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã ghi nhận sự cố thành công\",\n  \"incidentId\": \"={{ $('Lưu vào PostgreSQL').item.json.id }}\"\n}",
+        "options": {}
+      },
+      "id": "d9239d14-2fd2-4cf6-a679-a8029ba8e6a1",
+      "name": "Trả response về React",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -496,
+        608
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3bd1838e-6c97-41fa-991f-887f50ebb819",
+      "name": "Gộp kết quả email",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -832,
+        608
+      ]
     }
   ],
   "pinData": {},
   "connections": {
-    "Form Báo sự cố": {
-      "main": [
-        [
-          {
-            "node": "Chuẩn bị dữ liệu sự cố",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Chuẩn bị dữ liệu sự cố": {
       "main": [
         [
           {
-            "node": "Lưu vào Sheet Bảo trì",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Lưu vào Sheet Bảo trì": {
-      "main": [
-        [
-          {
-            "node": "Kiểm tra mức độ khẩn cấp",
+            "node": "Lưu vào PostgreSQL",
             "type": "main",
             "index": 0
           }
@@ -414,11 +253,6 @@
         ]
       ]
     },
-    "Thông báo Telegram khẩn cấp": {
-      "main": [
-        []
-      ]
-    },
     "Email phản hồi khách hàng": {
       "main": [
         [
@@ -429,17 +263,73 @@
           }
         ]
       ]
+    },
+    "Email phản hồi bình thường": {
+      "main": [
+        [
+          {
+            "node": "Gộp kết quả email",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Nhận báo cáo từ React": {
+      "main": [
+        [
+          {
+            "node": "Chuẩn bị dữ liệu sự cố",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu vào PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra mức độ khẩn cấp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thông báo Telegram khẩn cấp": {
+      "main": [
+        [
+          {
+            "node": "Gộp kết quả email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gộp kết quả email": {
+      "main": [
+        [
+          {
+            "node": "Trả response về React",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
-    "availableInMCP": false
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
-  "versionId": "6647c7e5-685b-4114-8a42-c15672967217",
+  "versionId": "8ac9883b-938c-45bc-a230-5bea84752819",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "58d5300b14e5f9edfc9743ae4534a73e532ae7000f5540772babff5fe8093248"
+    "instanceId": "d4d3941fa03660f2191a0040587b34a07a92851b9f178814059d6089332023eb"
   },
-  "id": "vPw3OT3JDfJJA1il",
+  "id": "WXCQ8vbCTsdNHGj9",
   "tags": []
 }
