@@ -1,12 +1,68 @@
-version: "3.8"
-
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_clm_system
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=adminpassword
+      - POSTGRES_DB=clm_system_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d clm_system_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_clm_system
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 2. Thùng chứa Backend (FastAPI)
+  backend:
+    build: ./backend # Nó sẽ chui vào thư mục backend tìm Dockerfile
+    container_name: clm_fastapi
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Link kết nối từ BE sang DB (nhìn kỹ tên user, pass, db trùng với ở trên)
+      - DATABASE_URL=postgresql://admin:adminpassword@postgres:5432/clm_system_db
+
+  # 3. Thùng chứa Frontend (React)
+  frontend:
+    build: ./frontend # Chui vào thư mục frontend tìm Dockerfile
+    container_name: clm_react
+    restart: always
+    ports:
+      - "3000:80" # Hoặc 80 nếu ông config Nginx trong Dockerfile của FE
+    depends_on:
+      - backend
+
   n8n:
     image: docker.n8n.io/n8nio/n8n
     container_name: n8n_clm_system
     restart: unless-stopped
     ports:
       - "5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - n8n_data:/home/node/.n8n
     environment:
@@ -17,5 +73,14 @@ services:
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
 
+      # Cấu hình n8n sử dụng PostgreSQL làm DB chính
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=clm_system_db
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=adminpassword
+
 volumes:
   n8n_data:
+  postgres_data:
