@@ -1,0 +1,705 @@
+{
+  "name": "new-WF-1-2-3 (Tích hợp PostgreSQL)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tao-hop-dong",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook (FastAPI gọi)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        48
+      ],
+      "id": "31b04264-600f-4f5b-83e3-698e06fe7abd",
+      "webhookId": "ebd87cc6-0073-4bdc-9cb7-33a033926153"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $input.item.json.body;\n\n// Format tiền tệ chuẩn VN\ndata.giaThueFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.giaThue);\ndata.tienCocFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.tienCoc);\n\n// Format ngày tháng hiện tại\nconst today = new Date();\ndata.ngayLap = today.toLocaleDateString('vi-VN');\n\nreturn data;"
+      },
+      "name": "Xử lý & Format Dữ liệu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        48
+      ],
+      "id": "4f82e69c-b11c-455c-8079-16c2dc874d4f"
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1agi4ZVt9OINuSBRNZ6w4ncANOgd2sQIXRg-PuExhHmU",
+          "mode": "id"
+        },
+        "name": "=Hợp Đồng - {{ $json.hoTen }} - {{ $json.phong }}",
+        "options": {}
+      },
+      "name": "Copy Template HĐ",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1072,
+        48
+      ],
+      "id": "a0805b00-0b8a-4375-9074-811411963fc7",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "replaceAll",
+              "text": "{{HoTen}}",
+              "replaceText": "={{ $('Xử lý & Format Dữ liệu').item.json.hoTen }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{{Phong}}",
+              "replaceText": "={{ $('Xử lý & Format Dữ liệu').item.json.phong }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{{GiaThue}}",
+              "replaceText": "={{ $('Xử lý & Format Dữ liệu').item.json.giaThueFormatted }}"
+            }
+          ]
+        }
+      },
+      "name": "Điền Thông Tin HĐ",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        48
+      ],
+      "id": "59e3c220-291b-46f8-8a18-55b74a14465b",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8OAQ4nKo6Dv3Div6",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Copy Template HĐ').item.json.id }}/export",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "mimeType",
+              "value": "application/pdf"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Ép ra file PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -640,
+        48
+      ],
+      "id": "c7d2d627-4ea4-4264-87a1-82cef8425e22",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Copy Template HĐ').item.json.name }}.pdf",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1cef60zvdLf7igFjNF_FPb-ndoYApAKS4",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "name": "Lưu PDF lên Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -416,
+        48
+      ],
+      "id": "1ffbab65-b982-4e82-a8a8-cd3a92df7f3c",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE contracts \nSET pdf_link = 'https://docs.google.com/document/d/{{ $('Lưu PDF lên Drive').item.json.id }}'\nWHERE phong = '{{ $('Webhook (FastAPI gọi)').item.json.body.phong }}';",
+        "options": {}
+      },
+      "name": "Cập nhật Link PDF vào DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [
+        -192,
+        48
+      ],
+      "id": "postgres-node-123"
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=🎉 Đã tạo xong hợp đồng cho khách {{ $('Xử lý & Format Dữ liệu').item.json.hoTen }} (Phòng {{ $('Xử lý & Format Dữ liệu').item.json.phong }}).\nLink HĐ: https://docs.google.com/document/d/{{ $('Copy Template HĐ').item.json.id }}",
+        "additionalFields": {}
+      },
+      "name": "Báo cáo Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        144
+      ],
+      "id": "98fe6947-6339-4b85-955d-53d72867f743",
+      "webhookId": "19173117-1c45-4a26-b1b0-5b0bd09bd5e4",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Trả kết quả cho FastAPI",
+      "type": "n8n-nodes-base.webhookResponse",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -64
+      ],
+      "id": "cf9e361a-0b8f-42ed-adc6-5f15dbbf2103"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ban-giao-phong",
+        "options": {}
+      },
+      "name": "Webhook (Bàn giao)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        464
+      ],
+      "id": "b15a9be7-d1af-46ce-b640-d4d69406a09c",
+      "webhookId": "b41188e3-77b3-4db0-9cfb-9e4fab5efa9b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.trangThai }}",
+              "value2": "Đã bàn giao"
+            }
+          ]
+        }
+      },
+      "name": "Kiểm tra Trạng thái",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        464
+      ],
+      "id": "b5c4898c-8416-4060-9e3a-0aa3bbd5ec4e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "uploadLink",
+              "value": "=http://localhost:3000/nop-cccd?room={{ $json.body.phong }}&token={{ $json.body.khachId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Sinh Link Nộp CCCD (React)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -976,
+        352
+      ],
+      "id": "84542586-0d8f-4ef8-a6e4-ee5ee4d74c2f"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook (Bàn giao)').item.json.body.email }}",
+        "subject": "🏠 Chào mừng bạn đến với Khu trọ của chúng tôi!",
+        "message": "=<p>Chào <b>{{ $('Webhook (Bàn giao)').item.json.body.hoTen }}</b>,</p><p>Phòng <b>{{ $('Webhook (Bàn giao)').item.json.body.phong }}</b> đã được bàn giao.</p><p>Wifi: 12345678</p><p>Vui lòng bấm vào link dưới đây để nộp ảnh CCCD làm tạm trú:</p><a href=\"{{ $json.uploadLink }}\" style=\"padding: 10px; background: #007bff; color: white; text-decoration: none;\">Nộp CCCD Ngay</a>",
+        "options": {}
+      },
+      "name": "Gửi Mail Welcome",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        352
+      ],
+      "id": "ce294b52-c27d-4a02-817a-a6c2f9c23a1d",
+      "webhookId": "501d931c-fcba-4377-9333-6fc8999f259c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=📩 Đã gửi Email chào mừng và yêu cầu nộp CCCD cho phòng {{ $('Webhook (Bàn giao)').item.json.body.phong }}.",
+        "additionalFields": {}
+      },
+      "name": "Telegram Log",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        352
+      ],
+      "id": "7d4c0bdf-a6a9-4f26-99b3-0c99b0ddca6b",
+      "webhookId": "2615dd05-9632-4b7b-b5b0-9eef33847e62",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chot-dien-nuoc",
+        "options": {}
+      },
+      "name": "Webhook (Chốt số)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        704
+      ],
+      "id": "d5251262-d354-4a0b-b391-5c026ff3e12a",
+      "webhookId": "83ea09ca-2ca6-4d86-a9f2-9b11ce8a98ff"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $input.item.json.body;\n\n// Sinh mã VietQR động để nhúng vào Email\nconst bankCode = 'MB';\nconst accNumber = '090512404';\nconst accName = 'NGUYEN VAN HUY';\nconst amount = data.tongTien;\nconst content = `ThanhToan_${data.phong}`;\n\ndata.qrCodeUrl = `https://img.vietqr.io/image/${bankCode}-${accNumber}-compact2.png?amount=${amount}&addInfo=${content}&accountName=${accName}`;\n\n// Format tiền in vào PDF\ndata.tongTienDep = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);\n\nreturn data;"
+      },
+      "name": "Tạo Mã QR & Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        704
+      ],
+      "id": "6329ad97-5bec-4bcd-987b-f305ba9d7635"
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "ID_TEMPLATE_GIAY_BAO_TIEN",
+          "mode": "id"
+        },
+        "name": "=Hóa Đơn Tháng - Phòng {{ $json.phong }}",
+        "options": {}
+      },
+      "name": "Copy Template Hóa Đơn",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -976,
+        704
+      ],
+      "id": "1d37610a-7f3b-4dc3-9a6a-ba1a26942c8a",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "replaceAll",
+              "text": "{{ChiSoDien}}",
+              "replaceText": "={{ $('Tạo Mã QR & Format').item.json.soDien }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{{TongTien}}",
+              "replaceText": "={{ $('Tạo Mã QR & Format').item.json.tongTienDep }}"
+            }
+          ]
+        }
+      },
+      "name": "Điền Số Liệu",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        704
+      ],
+      "id": "589912b3-8eb7-4000-9fb4-a8be04ba3aa4",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "8OAQ4nKo6Dv3Div6",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Copy Template Hóa Đơn').item.json.id }}/export",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "mimeType",
+              "value": "application/pdf"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Tạo PDF Hóa Đơn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -544,
+        704
+      ],
+      "id": "6997f77b-6699-4087-b467-9b7a7c79b0db",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Once07HNrKpGiyy7",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook (Chốt số)').item.json.body.email }}",
+        "subject": "=Hóa đơn tiền nhà tháng này - Phòng {{ $('Webhook (Chốt số)').item.json.body.phong }}",
+        "message": "=<p>Đính kèm là chi tiết hóa đơn tháng này.</p><p>Bạn vui lòng quét mã QR dưới đây để thanh toán số tiền: <b>{{ $('Tạo Mã QR & Format').item.json.tongTienDep }}</b></p><br><img src=\"{{ $('Tạo Mã QR & Format').item.json.qrCodeUrl }}\" width=\"300\">",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "name": "Gửi Hóa Đơn + QR",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        704
+      ],
+      "id": "10c66bab-f73a-4d11-a8e7-ba743fbb3df8",
+      "webhookId": "f6ab620d-943b-47d0-a728-82cae93d0c69",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=💸 Đã gửi hóa đơn tháng cho phòng {{ $('Webhook (Chốt số)').item.json.body.phong }}. Tổng thu: {{ $('Tạo Mã QR & Format').item.json.tongTienDep }}.",
+        "additionalFields": {}
+      },
+      "name": "Báo cáo Telegram1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        704
+      ],
+      "id": "bfecee17-18d9-4033-a94c-fcdd7d37ecff",
+      "webhookId": "56283935-c218-430a-a20b-58cd040a3192",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (FastAPI gọi)": {
+      "main": [
+        [
+          {
+            "node": "Xử lý & Format Dữ liệu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xử lý & Format Dữ liệu": {
+      "main": [
+        [
+          {
+            "node": "Copy Template HĐ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Template HĐ": {
+      "main": [
+        [
+          {
+            "node": "Điền Thông Tin HĐ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Điền Thông Tin HĐ": {
+      "main": [
+        [
+          {
+            "node": "Ép ra file PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ép ra file PDF": {
+      "main": [
+        [
+          {
+            "node": "Lưu PDF lên Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu PDF lên Drive": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật Link PDF vào DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật Link PDF vào DB": {
+      "main": [
+        [
+          {
+            "node": "Báo cáo Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Trả kết quả cho FastAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Bàn giao)": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra Trạng thái",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra Trạng thái": {
+      "main": [
+        [
+          {
+            "node": "Sinh Link Nộp CCCD (React)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sinh Link Nộp CCCD (React)": {
+      "main": [
+        [
+          {
+            "node": "Gửi Mail Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Mail Welcome": {
+      "main": [
+        [
+          {
+            "node": "Telegram Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Chốt số)": {
+      "main": [
+        [
+          {
+            "node": "Tạo Mã QR & Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo Mã QR & Format": {
+      "main": [
+        [
+          {
+            "node": "Copy Template Hóa Đơn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Template Hóa Đơn": {
+      "main": [
+        [
+          {
+            "node": "Điền Số Liệu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Điền Số Liệu": {
+      "main": [
+        [
+          {
+            "node": "Tạo PDF Hóa Đơn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo PDF Hóa Đơn": {
+      "main": [
+        [
+          {
+            "node": "Gửi Hóa Đơn + QR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Hóa Đơn + QR": {
+      "main": [
+        [
+          {
+            "node": "Báo cáo Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "50769409-566a-418a-8e70-ca7c5c24c48c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75d878436d3383106d83217020ad7d834403a7cfc2e381de67c81a832ea2ab20"
+  },
+  "id": "Hq6CIQadN-1Q4YIX0J4Qc",
+  "tags": []
+}
