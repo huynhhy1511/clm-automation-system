@@ -1,0 +1,314 @@
+{
+  "name": "CLM workflow 1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tao-hop-dong",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook (FastAPI gọi)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -3360,
+        512
+      ],
+      "id": "50014d0d-da40-41ae-87e5-d97eee51c65a",
+      "webhookId": "ebd87cc6-0073-4bdc-9cb7-33a033926153"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d = $input.item.json.body;\n\n// Hàm format số tiền thành chuẩn VN (VD: 3.500.000), không tự thêm chữ \"đ\" vì trong HTML đã tự gõ \"đ/tháng\"\nconst fmt = (n) => {\n    if (!n) return '....................';\n    return new Intl.NumberFormat('vi-VN').format(n);\n};\n\nd.giaThueFormatted = fmt(d.giaThue);\nd.tienCocFormatted = fmt(d.tienCoc);\n\n// Lấy ngày tháng năm hiện tại chia ra từng biến để in vào hợp đồng\nconst today = new Date();\nconst day = String(today.getDate()).padStart(2, '0');\nconst month = String(today.getMonth() + 1).padStart(2, '0');\nconst year = today.getFullYear();\n\nd.soThangText = (d.soThang || 12) + ' tháng';\n\n// Khung HTML chuẩn MS Word (Font Times New Roman, dãn dòng 1.5)\nd.htmlContract = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  body { \n    font-family: \"Times New Roman\", Times, serif; \n    font-size: 14pt; \n    line-height: 1.5; \n    margin: 40px; /* Căn lề như giấy A4 */\n    color: #000; \n  }\n  .center { text-align: center; }\n  .bold { font-weight: bold; }\n  .italic { font-style: italic; }\n  .uppercase { text-transform: uppercase; }\n  .justify { text-align: justify; }\n  h1 { font-size: 14pt; margin: 5px 0; }\n  h2 { font-size: 16pt; margin: 20px 0; }\n  p { margin: 5px 0; text-align: justify; }\n  .indent { padding-left: 20px; }\n  .signatures { display: flex; justify-content: space-between; margin-top: 30px; }\n  .sig-box { width: 45%; text-align: center; }\n  .spacing-bottom { margin-bottom: 90px; }\n  .dotted-line { display: inline-block; border-bottom: 1px dotted #000; min-width: 150px; }\n</style>\n</head>\n<body>\n  <div class=\"center bold\">\n    <h1 class=\"uppercase\">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h1>\n    <p>Độc lập – Tự do – Hạnh phúc</p>\n    <p>---o0o---</p>\n  </div>\n\n  <h2 class=\"center bold uppercase\">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h2>\n\n  <p class=\"italic center\">Hôm nay, ngày ${day} tháng ${month} năm ${year}; tại địa chỉ: ................................................................</p>\n  <p>Chúng tôi gồm:</p>\n\n  <p class=\"bold\">1. Đại diện bên cho thuê phòng trọ (Bên A):</p>\n  <div class=\"indent\">\n      <p>Ông/bà: <b>Huỳnh Ngọc Huy</b> <span style=\"float:right\">Sinh ngày: ....................................</span></p>\n      <p>Nơi đăng ký HK: ..............................................................................................................................</p>\n      <p>CMND/CCCD số: .................................... cấp ngày .......................... tại: ....................................</p>\n      <p>Số điện thoại: ................................................</p>\n  </div>\n\n  <p class=\"bold\">2. Bên thuê phòng trọ (Bên B):</p>\n  <div class=\"indent\">\n      <p>Ông/bà: <b>${d.hoTen || '........................................'}</b> <span style=\"float:right\">Sinh ngày: ${d.ngaySinh || '....................................'}</span></p>\n      <p>Nơi đăng ký HK thường trú: ${d.thuongTru || '...................................................................................................'}</p>\n      <p>Số CMND/CCCD: <b>${d.soCccd || '....................................'}</b> cấp ngày: ${d.ngayCap || '....................'} tại: ${d.noiCap || '....................'}</p>\n      <p>Số điện thoại: <b>${d.sdt || '................................................'}</b></p>\n  </div>\n\n  <p>Sau khi bàn bạc trên tinh thần dân chủ, hai bên cùng có lợi, cùng thống nhất như sau:</p>\n  <p>Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ................................................................................</p>\n\n  <div class=\"indent\">\n      <p>- Phòng số: <b>${d.phong || '...........'}</b></p>\n      <p>- Giá thuê: <b>${d.giaThueFormatted} đ/tháng</b></p>\n      <p>- Hình thức thanh toán: ....................................................................................................................</p>\n      <p>- Tiền điện: 3.500 đ/kwh tính theo chỉ số công tơ, thanh toán vào cuối các tháng.</p>\n      <p>- Tiền nước: 100.000 đ/người thanh toán vào đầu các tháng.</p>\n      <p>- Tiền đặt cọc: <b>${d.tienCocFormatted} đ</b></p>\n      <p>- Thời hạn thuê: <b>${d.soThangText}</b>, bắt đầu tính tiền từ ngày: <b>${d.ngayBatDau || '....................'}</b></p>\n  </div>\n\n  <p class=\"bold uppercase\" style=\"margin-top: 15px; text-decoration: underline;\">TRÁCH NHIỆM CỦA CÁC BÊN</p>\n\n  <p class=\"bold\">* Trách nhiệm của bên A:</p>\n  <div class=\"indent\">\n      <p>- Tạo mọi điều kiện thuận lợi để bên B thực hiện theo hợp đồng.</p>\n      <p>- Cung cấp nguồn điện, nước, wifi cho bên B sử dụng.</p>\n  </div>\n\n  <p class=\"bold\">* Trách nhiệm của bên B:</p>\n  <div class=\"indent\">\n      <p>- Thanh toán đầy đủ các khoản tiền theo đúng thỏa thuận.</p>\n      <p>- Bảo quản các trang thiết bị và cơ sở vật chất của bên A trang bị cho ban đầu (làm hỏng phải sửa, mất phải đền).</p>\n      <p>- Không được tự ý sửa chữa, cải tạo cơ sở vật chất khi chưa được sự đồng ý của bên A.</p>\n      <p>- Giữ gìn vệ sinh trong và ngoài khuôn viên của phòng trọ.</p>\n      <p>- Bên B phải chấp hành mọi quy định của pháp luật Nhà nước và quy định của địa phương.</p>\n      <p>- Nếu bên B cho khách ở qua đêm thì phải báo và được sự đồng ý của chủ nhà đồng thời phải chịu trách nhiệm về các hành vi vi phạm pháp luật của khách trong thời gian ở lại.</p>\n  </div>\n\n  <p class=\"bold uppercase\" style=\"margin-top: 15px; text-decoration: underline;\">TRÁCH NHIỆM CHUNG</p>\n  <div class=\"indent\">\n      <p>- Hai bên phải tạo điều kiện cho nhau thực hiện hợp đồng.</p>\n      <p>- Trong thời gian hợp đồng còn hiệu lực nếu bên nào vi phạm các điều khoản đã thỏa thuận thì bên còn lại có quyền đơn phương chấm dứt hợp đồng; nếu sự vi phạm hợp đồng đó gây tổn thất cho bên bị vi phạm hợp đồng thì bên vi phạm hợp đồng phải bồi thường thiệt hại.</p>\n      <p>- Một trong hai bên muốn chấm dứt hợp đồng trước thời hạn thì phải báo trước cho bên kia ít nhất 30 ngày và hai bên phải có sự thống nhất.</p>\n      <p>- Bên A phải trả lại tiền đặt cọc cho bên B.</p>\n      <p>- Bên nào vi phạm điều khoản chung thì phải chịu trách nhiệm trước pháp luật.</p>\n      <p>- Hợp đồng được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ một bản.</p>\n  </div>\n\n  <div class=\"signatures\">\n      <div class=\"sig-box\">\n          <p class=\"bold\">ĐẠI DIỆN BÊN B</p>\n          <p class=\"italic spacing-bottom\">(Ký, ghi rõ họ tên)</p>\n          <p class=\"bold\">${d.hoTen || ''}</p>\n      </div>\n      <div class=\"sig-box\">\n          <p class=\"bold\">ĐẠI DIỆN BÊN A</p>\n          <p class=\"italic spacing-bottom\">(Ký, ghi rõ họ tên)</p>\n          <p class=\"bold\">Huỳnh Ngọc Huy</p>\n      </div>\n  </div>\n</body>\n</html>`;\n\nreturn d;"
+      },
+      "name": "Format & Tạo HTML Hợp Đồng",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3168,
+        512
+      ],
+      "id": "b6e311c0-2f1e-42da-a718-38f1d779fee6"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Chuyển HTML string thành binary file index.html\n// để Gotenberg nhận đúng format multipart\nconst htmlContent = $json.htmlContract;\nconst base64Html = Buffer.from(htmlContent, 'utf-8').toString('base64');\n\n// Gắn vào binary data của item\n$binary = {\n  indexHtml: {\n    data: base64Html,\n    mimeType: 'text/html',\n    fileName: 'index.html',\n    fileExtension: 'html'\n  }\n};\n\nreturn { json: $json, binary: $binary };"
+      },
+      "name": "HTML String → Binary File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2976,
+        512
+      ],
+      "id": "7d6dbbd2-4de0-47ba-a944-2b82d1f3f13d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://gotenberg:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "indexHtml"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Gotenberg: HTML → PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2752,
+        512
+      ],
+      "id": "d5c79218-9f18-49c9-b00e-d6d7be7fcbd6"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Lấy chính xác cái key mà Gotenberg đã trả về (thường nó đang bị kẹt tên \"indexHtml\")\nconst binaryKey = Object.keys($input.item.binary)[0];\n\nif (!binaryKey) {\n  throw new Error(\"Không có file từ Gotenberg!\");\n}\n\n// Giải mã Base64 cực mượt để đưa xuống DB\nconst fileBuffer = await this.helpers.getBinaryDataBuffer(0, binaryKey);\nconst pdfBase64 = fileBuffer.toString('base64');\n\n// Lấy lại dữ liệu cũ từ node Format và đưa vào JSON để gửi xuống Fastapi\nconst prevData = $('Format & Tạo HTML Hợp Đồng').item.json;\n$input.item.json = {\n  ...prevData,\n  pdfBase64: pdfBase64\n};\n\n// 🎯 ĐÂY LÀ CHÌA KHÓA: Đổi tên key thành \"data\" để Node GMAIL nhận diện được file!\n$input.item.binary = {\n  data: $input.item.binary[binaryKey]\n};\n\n// Bonus: Đổi luôn tên file đính kèm thành dạng \"Hop_Dong_Phong_A101.pdf\" gửi khách cho ngầu\n$input.item.binary.data.fileName = `Hop_Dong_Phong_${prevData.phong}.pdf`;\n$input.item.binary.data.mimeType = 'application/pdf';\n\nreturn $input.item;\n"
+      },
+      "name": "Lấy PDF Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2560,
+        512
+      ],
+      "id": "d3e429d7-fa8a-4abd-8d86-d897fccc7385"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/contracts/save-pdf",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contract_id",
+              "value": "={{ $json.contractId }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Lưu PDF vào Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2352,
+        512
+      ],
+      "id": "d084da1e-f18f-4766-afc3-6865b6fbb1c3"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}",
+        "subject": "=🎉 Hợp đồng thuê phòng {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }} & Tài khoản đăng nhập",
+        "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'>\n<div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'>\n  <h2 style='color:white;margin:0'>🏠 Chào mừng đến CLM System!</h2>\n</div>\n<div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'>\n  <p>Xin chào <strong>{{ $('Format & Tạo HTML Hợp Đồng').item.json.hoTen }}</strong>,</p>\n  <p>Hợp đồng thuê phòng đã ký kết thành công. <b>File PDF hợp đồng đính kèm trong email này.</b></p>\n  <div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0'>\n    <b style='color:#1e40af'>📋 Thông tin hợp đồng</b><br><br>\n    🏠 Phòng: <b>{{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }}</b><br>\n    💰 Giá thuê: <b>{{ $('Format & Tạo HTML Hợp Đồng').item.json.giaThueFormatted }}/tháng</b><br>\n    🔐 Tiền cọc: {{ $('Format & Tạo HTML Hợp Đồng').item.json.tienCocFormatted }}<br>\n    📅 Từ: {{ $('Format & Tạo HTML Hợp Đồng').item.json.ngayBatDau }} → {{ $('Format & Tạo HTML Hợp Đồng').item.json.ngayKetThuc }}<br>\n    ⏱️ Thời hạn: {{ $('Format & Tạo HTML Hợp Đồng').item.json.soThangText }}\n  </div>\n  <p style='color:#64748b;font-size:12px;margin-top:20px'>Trân trọng,<br><b>Ban Quản Lý</b></p>\n</div></div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "name": "Gửi Mail + PDF Hợp Đồng",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1888,
+        512
+      ],
+      "id": "9a90e0f9-10dc-44d7-b414-982f95bab842",
+      "webhookId": "90d7d525-f661-42a5-b1c9-b64189d15bcd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=✅ Xử lý hợp đồng xong!\n👤 {{ $('Format & Tạo HTML Hợp Đồng').item.json.hoTen }}\n🏠 Phòng: {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }}\n📧 Email + PDF gửi tới: {{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}\n💾 PDF đã lưu DB (Contract #{{ $('Format & Tạo HTML Hợp Đồng').item.json.contractId }})",
+        "additionalFields": {}
+      },
+      "name": "Báo cáo Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        -1648,
+        512
+      ],
+      "id": "514fa3ad-f734-471d-8df0-90897191f0b2",
+      "webhookId": "03caecf4-5f9f-4641-8ec4-ea986b4ee60e",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"success\", \"message\": \"PDF lưu DB và Email đã gửi!\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1648,
+        368
+      ],
+      "id": "6fa43351-8f83-40fe-a521-9533d9fc10f4",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Khôi phục lại cục file PDF nguyên vẹn từ node Base64\n$input.item.binary = $('Lấy PDF Base64').item.binary;\nreturn $input.item;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2144,
+        512
+      ],
+      "id": "d4f9bfba-b3b5-4f97-9d6f-ac9df8b16e38",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (FastAPI gọi)": {
+      "main": [
+        [
+          {
+            "node": "Format & Tạo HTML Hợp Đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format & Tạo HTML Hợp Đồng": {
+      "main": [
+        [
+          {
+            "node": "HTML String → Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML String → Binary File": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg: HTML → PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg: HTML → PDF": {
+      "main": [
+        [
+          {
+            "node": "Lấy PDF Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy PDF Base64": {
+      "main": [
+        [
+          {
+            "node": "Lưu PDF vào Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu PDF vào Database": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Mail + PDF Hợp Đồng": {
+      "main": [
+        [
+          {
+            "node": "Báo cáo Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Gửi Mail + PDF Hợp Đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "9afebb82-3016-47be-a341-690b7a4ea193",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+  },
+  "id": "i5nKO7aBizMrVWiYJv6nl",
+  "tags": []
+}

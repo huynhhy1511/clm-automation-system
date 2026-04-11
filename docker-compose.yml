@@ -26,6 +26,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: adminpassword
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +39,9 @@ services:
     restart: always
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/static/invoices:/app/static/invoices
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,7 +55,10 @@ services:
     container_name: clm_react
     restart: always
     ports:
-      - "3000:80" # Hoặc 80 nếu ông config Nginx trong Dockerfile của FE
+      - "3000:5173" # Ánh xạ cổng localhost:3000 vào cổng 5173 của Vite
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Tránh ghi đè thư mục node_modules từ local vào Docker
     depends_on:
       - backend
 
@@ -59,7 +67,7 @@ services:
     container_name: n8n_clm_system
     restart: unless-stopped
     ports:
-      - "5678:5678"
+      - "5679:5678"
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,7 +78,7 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - NODE_ENV=production
-      - WEBHOOK_URL=http://localhost:5678/
+      - WEBHOOK_URL=http://localhost:5679/
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
 
       # Cấu hình n8n sử dụng PostgreSQL làm DB chính
@@ -81,6 +89,19 @@ services:
       - DB_POSTGRESDB_USER=admin
       - DB_POSTGRESDB_PASSWORD=adminpassword
 
+  # 5. Gotenberg - Chuyển đổi HTML → PDF (free, self-hosted, không giới hạn)
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: gotenberg_clm
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    command:
+      - "gotenberg"
+      - "--chromium-disable-web-security"
+      - "--api-timeout=30s"
+
 volumes:
   n8n_data:
   postgres_data:
+  pgadmin_data:
