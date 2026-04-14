@@ -1,0 +1,338 @@
+{
+  "name": "CLM workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chot-dien-nuoc",
+        "options": {}
+      },
+      "id": "6056cbe1-8e9b-4ced-8458-194f7a38e5c4",
+      "name": "Webhook (Chốt tay)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        592
+      ],
+      "webhookId": "06724a3b-90da-4f88-8e36-af580575e8ec"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 25 * *"
+            }
+          ]
+        }
+      },
+      "id": "9da51a10-43d0-40a8-8c91-f52bf46033b2",
+      "name": "Schedule (Ngày 25)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/rooms/fixed-rate",
+        "options": {}
+      },
+      "id": "60f72df9-2087-465b-8265-70816a712621",
+      "name": "Lấy DS Phòng Trọn Gói",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        0,
+        800
+      ],
+      "notesInFlow": true,
+      "notes": "API này BE phải trả về mảng các phòng khoán"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body",
+        "options": {}
+      },
+      "id": "c4725e07-6c6a-4609-8a7a-983e24cf9ba6",
+      "name": "Tách từng phòng",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        208,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d = $input.item.json.body || $input.item.json;\n\n// 1. Tính toán & Định dạng tiền\nconst tongTien = d.tongTien || 3500000; // Mặc định nếu API ko truyền\nd.tongTienDep = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tongTien);\n\n// 2. Tạo Link VietQR\nconst bankCode = 'MB';\nconst accNumber = '0905881525';\nconst accName = 'HUYNH NGOC HUY';\nconst content = `ThanhToan_Phong_${d.phong || 'PT'}`;\nd.qrCodeUrl = `https://img.vietqr.io/image/${bankCode}-${accNumber}-compact2.png?amount=${tongTien}&addInfo=${content}&accountName=${accName}`;\n\nconst today = new Date();\nconst dateStr = today.toLocaleDateString('vi-VN');\n\n// 3. Khung HTML Hóa đơn chuẩn\nconst htmlInvoice = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  @page { size: A4; margin: 20mm; }\n  body { font-family: \"Arial\", sans-serif; color: #333; line-height: 1.4; }\n  .header { border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }\n  .header h1 { color: #1e40af; margin: 0; font-size: 24px; text-transform: uppercase; }\n  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }\n  th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }\n  th { background-color: #f8fafc; }\n  .total { font-size: 20px; font-weight: bold; color: #dc2626; text-align: right; }\n  .qr-section { text-align: center; margin-top: 30px; }\n  .qr-section img { width: 220px; border: 2px solid #1e40af; border-radius: 10px; padding: 10px; }\n</style>\n</head>\n<body>\n  <div class=\"header\">\n    <h1>HÓA ĐƠN TIỀN TRỌ - THÁNG ${today.getMonth() + 1}/${today.getFullYear()}</h1>\n    <p>Ngày lập: ${dateStr} | <b>Phòng: ${d.phong || '...'}</b></p>\n  </div>\n  <p><b>Khách hàng:</b> ${d.hoTen || 'Khách thuê'}</p>\n  <table>\n    <tr><th>Hạng mục</th><th>Số lượng/Chỉ số</th><th>Thành tiền</th></tr>\n    <tr><td>Tiền phòng</td><td>1 tháng</td><td>... đ</td></tr>\n    <tr><td>Tiền điện</td><td>${d.soDien ? d.soDien + ' kWh' : 'Khoán'}</td><td>... đ</td></tr>\n    <tr><td>Tiền nước</td><td>${d.soNuoc ? d.soNuoc + ' m3' : 'Khoán'}</td><td>... đ</td></tr>\n  </table>\n  <div class=\"total\">TỔNG THANH TOÁN: ${d.tongTienDep}</div>\n  <div class=\"qr-section\">\n    <h3>MÃ QR THANH TOÁN</h3>\n    <img src=\"${d.qrCodeUrl}\" alt=\"Mã QR\">\n    <p><i>Cảm ơn quý khách!</i></p>\n  </div>\n</body>\n</html>`;\n\n// 4. Đóng gói cho Gotenberg\nreturn {\n  json: d,\n  binary: {\n    indexHtml: {\n      data: Buffer.from(htmlInvoice, 'utf-8').toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'invoice.html'\n    }\n  }\n};"
+      },
+      "id": "92dc623b-aeb7-47a6-99d8-3fdac8542ee7",
+      "name": "Tạo HTML & Tính QR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://gotenberg:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "indexHtml"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "774cc86d-1f1f-41b3-862c-924de10d5cb2",
+      "name": "Gotenberg: Tạo PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        608,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const pdfFile = $input.item.binary?.data;\nif (!pdfFile) throw new Error(\"Gotenberg lỗi!\");\n\nconst fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst prevData = $('Tạo HTML & Tính QR').item.json;\n\nreturn {\n  json: { ...prevData, pdfBase64: pdfBase64 },\n  binary: {\n    data: {\n      data: pdfBase64,\n      mimeType: 'application/pdf',\n      fileName: `HoaDon_P${prevData.phong || 'X'}.pdf`,\n      fileExtension: 'pdf'\n    }\n  }\n};"
+      },
+      "id": "ab03b56c-eecb-4b12-a3ae-6857f486f359",
+      "name": "Đóng gói PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Hóa đơn tháng này - Phòng {{ $json.phong }}",
+        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px;'>\n  <h2>Xin chào {{ $json.hoTen }},</h2>\n  <p>Ban quản lý xin gửi hóa đơn tiền phòng tháng này. Tổng số tiền cần thanh toán là: <b style='color:red;'>{{ $json.tongTienDep }}</b>.</p>\n  <p>Bạn có thể mở file PDF đính kèm hoặc quét trực tiếp mã QR dưới đây để thanh toán nhanh:</p>\n  <img src=\"{{ $json.qrCodeUrl }}\" width=\"250\" style=\"border:2px solid #1e40af; border-radius:8px;\">\n  <p>Trân trọng,<br>Ban Quản Lý</p>\n</div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "id": "28104e44-6e4f-4104-ae1e-d361d02ee0d0",
+      "name": "Gửi Mail Hóa Đơn",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1008,
+        704
+      ],
+      "webhookId": "15a0314b-bcfa-40b4-96c2-f2ffea76da59",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "6126814953",
+        "file": "data",
+        "additionalFields": {
+          "caption": "=💸 Đã gửi Hóa Đơn phòng {{ $json.phong }}. Tổng thu: {{ $json.tongTienDep }}"
+        }
+      },
+      "id": "bc0557c5-3c21-449d-ba97-b1f7ee5033d5",
+      "name": "Tele: Báo Cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        896
+      ],
+      "webhookId": "1e3f64da-20ca-4d4a-a4f5-ada2b55abc34",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/invoices/save",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phong",
+              "value": "={{ $json.phong }}"
+            },
+            {
+              "name": "thang_nam",
+              "value": "={{ $json.thangNam }}"
+            },
+            {
+              "name": "chi_so_dien_cu",
+              "value": "={{ $json.chiSoDienCu }}"
+            },
+            {
+              "name": "chi_so_dien_moi",
+              "value": "={{ $json.chiSoDienMoi }}"
+            },
+            {
+              "name": "chi_so_nuoc_cu",
+              "value": "={{ $json.chiSoNuocCu }}"
+            },
+            {
+              "name": "chi_so_nuoc_moi",
+              "value": "={{ $json.chiSoNuocMoi }}"
+            },
+            {
+              "name": "tong_tien",
+              "value": "={{ $json.tongTien }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            },
+            {
+              "name": "qr_url",
+              "value": "={{ $json.qrCodeUrl }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "db1e5fe5-b1e4-4557-8082-461eeb965c50",
+      "name": "Lưu Database (FastAPI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1008,
+        512
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (Chốt tay)": {
+      "main": [
+        [
+          {
+            "node": "Tạo HTML & Tính QR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule (Ngày 25)": {
+      "main": [
+        [
+          {
+            "node": "Lấy DS Phòng Trọn Gói",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy DS Phòng Trọn Gói": {
+      "main": [
+        [
+          {
+            "node": "Tách từng phòng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tách từng phòng": {
+      "main": [
+        [
+          {
+            "node": "Tạo HTML & Tính QR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo HTML & Tính QR": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg: Tạo PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg: Tạo PDF": {
+      "main": [
+        [
+          {
+            "node": "Đóng gói PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Đóng gói PDF": {
+      "main": [
+        [
+          {
+            "node": "Gửi Mail Hóa Đơn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: Báo Cáo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lưu Database (FastAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "63d7e531-1392-4b8a-8f81-5d04d9f29adb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+  },
+  "id": "8gY1u4LUK6tzD7uIWLxkU",
+  "tags": []
+}
