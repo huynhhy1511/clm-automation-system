@@ -71,3 +71,64 @@ class Contract(Base):
     tenant = relationship("Tenant", back_populates="contracts")
     room = relationship("Room", back_populates="contracts")
 
+<<<<<<< HEAD
+=======
+# 4. Bảng Hóa Đơn (UtilityBills)
+class UtilityBill(Base):
+    __tablename__ = "utility_bills"
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"))
+    thang_nam = Column(String(50), nullable=False) # VD: 10/2023 hoặc Tháng 04, 2026
+    chi_so_dien_cu = Column(Float, default=0)
+    chi_so_dien_moi = Column(Float, default=0)
+    chi_so_nuoc_cu = Column(Float, default=0)
+    chi_so_nuoc_moi = Column(Float, default=0)
+    tong_tien = Column(Float, nullable=False)
+    trang_thai = Column(String(50), default="Chưa thanh toán") # Chưa thanh toán, Đã thanh toán
+    anh_bill = Column(Text, nullable=True) # UNC thanh toán từ tenant
+    pdf_link = Column(String(255), nullable=True)
+    qr_url = Column(Text, nullable=True)
+    
+    room = relationship("Room", back_populates="bills")
+
+# 5. Bảng Sự cố (Incidents)
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"))
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
+    loai_su_co = Column(String(100), nullable=False)
+    muc_do_khan_cap = Column(String(50), nullable=False) # Bình thường, Khẩn cấp
+    mo_ta = Column(Text, nullable=False)
+    ngay_bao_cao = Column(DateTime, default=datetime.utcnow)
+    trang_thai = Column(String(50), default="Đã tiếp nhận") 
+    
+    room = relationship("Room", back_populates="incidents")
+    tenant = relationship("Tenant", back_populates="incidents")
+
+# 6. Bảng Yêu cầu Khách lạ Đặt phòng (BookingRequest)
+class BookingRequest(Base):
+    __tablename__ = "booking_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=False)
+    ho_ten = Column(String(100), nullable=False)
+    ngay_sinh = Column(String(20), nullable=False)
+    so_cccd = Column(String(20), nullable=False)
+    thuong_tru = Column(String(255), nullable=False)
+    ngay_cap = Column(String(20), nullable=False)
+    noi_cap = Column(String(100), nullable=False)
+    sdt = Column(String(15), nullable=False)
+    email = Column(String(100), nullable=False)
+    anh_khuon_mat = Column(Text, nullable=False) # Base64 Image
+    cccd_truoc = Column(Text, nullable=False) # Base64 Image
+    cccd_sau = Column(Text, nullable=False) # Base64 Image
+    ngay_bat_dau = Column(Date, nullable=True)  # Ngày bắt đầu thuê
+    so_thang_thue = Column(Integer, default=12)  # Số tháng muốn thuê
+    trang_thai = Column(String(50), default="Chờ duyệt") # Chờ duyệt, Đã duyệt, Từ chối
+    ngay_tao = Column(DateTime, default=datetime.utcnow)
+
+    room = relationship("Room", back_populates="booking_requests")
+>>>>>>> feature/wf3-billing

@@ -1,0 +1,447 @@
+{
+  "name": "CLM workflow 6",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "tenKhach",
+              "value": "={{ $json.body['Họ và tên'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "email",
+              "value": "={{ $json.body.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "maPhong",
+              "value": "={{ $json.body['Mã phòng'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "loaiSuCo",
+              "value": "={{ $json.body['Loại sự cố'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "mucDoKhanCap",
+              "value": "={{ $json.body['Mức độ khẩn cấp'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "moTa",
+              "value": "={{ $json.body['Mô tả chi tiết'] }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "ngayBaoCao",
+              "value": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "99334387-d0b0-4cc8-be22-ad7ddecd793c",
+      "name": "Chuẩn bị dữ liệu sự cố",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -720,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.mucDoKhanCap }}",
+              "rightValue": "Khẩn cấp",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "551dfa65-09fd-411b-825a-321b2e1a2c87",
+      "name": "Kiểm tra mức độ khẩn cấp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=🚨 SỰ CỐ KHẨN CẤP!\n\nPhòng: {{ $json.maPhong }}\nKhách: {{ $json.tenKhach }}\nEmail khách hàng: {{ $json.email }}\nLoại sự cố: {{ $json.loaiSuCo }}\nMô tả: {{ $json.moTa }}\nThời gian: {{ $json.ngayBaoCao }}\n\n\nVui lòng xử lý ngay!",
+        "additionalFields": {}
+      },
+      "id": "fc2ee4ee-39c7-45d0-9a5a-18c5bf447234",
+      "name": "Thông báo Telegram khẩn cấp",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "webhookId": "450a4620-13c5-45f2-a5ff-ab6b86dbedba",
+      "credentials": {
+        "telegramApi": {
+          "id": "rW3TljNKkhtPAJQS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Xác nhận tiếp nhận sự cố - Phòng {{ $json.maPhong }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #d32f2f;\">🚨 Sự cố khẩn cấp đã được ghi nhận</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố <strong>KHẨN CẤP</strong> từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #ffebee; padding: 15px; border-left: 4px solid #d32f2f; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p style=\"color: #d32f2f; font-weight: bold;\">⚡ Thợ sửa chữa sẽ đến trong vòng 2-4 giờ tới.</p>\n  <p>Xin cảm ơn sự thông báo kịp thời của bạn!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
+        "options": {}
+      },
+      "id": "7d3820d1-b9db-45e5-bfe9-a71a7021cb48",
+      "name": "Email phản hồi khách hàng",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ce3cfbba-a3a5-4c7b-b6a6-00d60fcc7057",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Xác nhận tiếp nhận sự cố - Phòng {{ $json.maPhong }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #1976d2;\">✅ Đã ghi nhận sự cố</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #e3f2fd; padding: 15px; border-left: 4px solid #1976d2; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p>🔧 Thợ sửa chữa sẽ liên hệ và đến trong vòng <strong>24 giờ tới</strong>.</p>\n  <p>Cảm ơn bạn đã thông báo!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
+        "options": {}
+      },
+      "id": "3429aa82-850f-484a-894d-7438a818e618",
+      "name": "Email phản hồi bình thường",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        368
+      ],
+      "webhookId": "1f04fb70-2d7f-424f-aef3-7e034886ee7b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bao-cao-su-co",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5891efbd-4a3e-49eb-8e01-ffcbfadda6bc",
+      "name": "Nhận báo cáo từ React",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -912,
+        192
+      ],
+      "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "incidents"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "room_id": "={{ $json.room_id }}",
+            "tenant_id": "={{ $json.tenant_id }}",
+            "muc_do_khan_cap": "={{ $json.mucDoKhanCap }}",
+            "ngay_bao_cao": "={{ $json.ngayBaoCao }}",
+            "loai_su_co": "={{ $json.loaiSuCo }}",
+            "mo_ta": "={{ $json.moTa }}",
+            "trang_thai": "Đã tiếp nhận"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "room_id",
+              "displayName": "room_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tenant_id",
+              "displayName": "tenant_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "loai_su_co",
+              "displayName": "loai_su_co",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "muc_do_khan_cap",
+              "displayName": "muc_do_khan_cap",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "mo_ta",
+              "displayName": "mo_ta",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ngay_bao_cao",
+              "displayName": "ngay_bao_cao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "trang_thai",
+              "displayName": "trang_thai",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c779824a-8b8e-473a-8a94-bead26b3efb4",
+      "name": "Lưu vào PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -528,
+        192
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "gdPIEZ4d9jgGIKji",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "4c09eb8a-dfe1-4e72-8943-904eacb4e508",
+      "name": "Gộp kết quả email",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        416,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã ghi nhận sự cố thành công\",\n  \"incidentId\": \"={{ $('Lưu vào PostgreSQL').item.json.id }}\"\n}",
+        "options": {}
+      },
+      "id": "85e5fb1f-e45b-444e-978b-b96d40569d78",
+      "name": "Trả response về React",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        752,
+        208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chuẩn bị dữ liệu sự cố": {
+      "main": [
+        [
+          {
+            "node": "Lưu vào PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra mức độ khẩn cấp": {
+      "main": [
+        [
+          {
+            "node": "Email phản hồi khách hàng",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email phản hồi bình thường",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thông báo Telegram khẩn cấp": {
+      "main": [
+        [
+          {
+            "node": "Gộp kết quả email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email phản hồi khách hàng": {
+      "main": [
+        [
+          {
+            "node": "Thông báo Telegram khẩn cấp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email phản hồi bình thường": {
+      "main": [
+        [
+          {
+            "node": "Gộp kết quả email",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Nhận báo cáo từ React": {
+      "main": [
+        [
+          {
+            "node": "Chuẩn bị dữ liệu sự cố",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu vào PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra mức độ khẩn cấp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gộp kết quả email": {
+      "main": [
+        [
+          {
+            "node": "Trả response về React",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c58abacf-f4f6-45c7-ab7c-94c5c6f78852",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+  },
+  "id": "bqoPSDzDBLokBdvewlp_d",
+  "tags": []
+}

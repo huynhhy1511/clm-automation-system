@@ -1,0 +1,271 @@
+{
+  "name": "CLM workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Chuẩn bị dữ liệu\").item.json.email }}",
+        "subject": "Xác nhận thanh toán - Biên lai điện tử",
+        "message": "=Kính gửi {{ $(\"Chuẩn bị dữ liệu\").item.json.tenKhach }},\n\nCảm ơn bạn đã thanh toán tiền thuê phòng {{ $(\"Chuẩn bị dữ liệu\").item.json.maPhong }} cho tháng {{ $(\"Chuẩn bị dữ liệu\").item.json.thangThanhToan }}.\n\nSố tiền: {{ $(\"Chuẩn bị dữ liệu\").item.json.soTien }} VNĐ\nTrạng thái: Đã thanh toán\n\nĐây là biên lai điện tử xác nhận giao dịch của bạn.\n\nTrân trọng,\nBan quản lý",
+        "options": {}
+      },
+      "id": "474764d8-38c2-4a5b-905d-d3d96614e3cc",
+      "name": "Gửi Email biên lai",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        432,
+        -144
+      ],
+      "webhookId": "bb157193-2da8-4dff-bbf9-13e808b8c758",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "tenKhach",
+              "value": "={{ $json.tenKhach || $json.hoVaTen }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "maPhong",
+              "value": "={{ $json.maPhong }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "thangThanhToan",
+              "value": "={{ $json.thangThanhToan }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "soTien",
+              "value": "={{ $json.soTien }}",
+              "type": "number"
+            },
+            {
+              "id": "id-6",
+              "name": "anhBill",
+              "value": "={{ $json.anhBillUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "trangThai",
+              "value": "Đã thanh toán",
+              "type": "string"
+            },
+            {
+              "id": "cf6862c3-eb04-49e0-a8fd-8aa30e0efc6a",
+              "name": "thoiGian",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a2516b62-ef3a-47ea-86dd-f743cb752ae7",
+      "name": "Chuẩn bị dữ liệu",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $input.item.json.body || $input.item.json;\nconst files = data.anhChuyenKhoan || [];\nconst fileUrls = Array.isArray(files) ? files.map(f => f.url || f).filter(url => url).join(', ') : files;\n\nreturn {\n  ...data,\n  anhBillUrl: fileUrls\n};"
+      },
+      "id": "60c4f2d0-bd57-4379-94ad-573430929240",
+      "name": "Xử lý ảnh bill",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment-confirmation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "be38397d-c6c1-4640-88ae-83fe5c7cb104",
+      "name": "Webhook nhận dữ liệu từ React",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -144
+      ],
+      "webhookId": "2e280bff-9363-4f58-b687-c0fb536ca58d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "<__PLACEHOLDER_VALUE__fastapi_backend_url__>/api/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tenKhach",
+              "value": "={{ $json.tenKhach }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "maPhong",
+              "value": "={{ $json.maPhong }}"
+            },
+            {
+              "name": "thangThanhToan",
+              "value": "={{ $json.thangThanhToan }}"
+            },
+            {
+              "name": "soTien",
+              "value": "={{ $json.soTien }}"
+            },
+            {
+              "name": "anhBill",
+              "value": "={{ $json.anhBill }}"
+            },
+            {
+              "name": "trangThai",
+              "value": "={{ $json.trangThai }}"
+            },
+            {
+              "name": "thoiGian",
+              "value": "={{ $json.thoiGian }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fe714cab-c6a6-46e5-aa97-4c725e408aeb",
+      "name": "Lưu vào PostgreSQL qua FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Xác nhận thanh toán thành công. Email biên lai đã được gửi.\",\n  \"data\": {\n    \"maPhong\": \"={{ $('Chuẩn bị dữ liệu').item.json.maPhong }}\",\n    \"thangThanhToan\": \"={{ $('Chuẩn bị dữ liệu').item.json.thangThanhToan }}\",\n    \"soTien\": \"={{ $('Chuẩn bị dữ liệu').item.json.soTien }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "0300eef0-7dba-4907-908e-6801e740c77d",
+      "name": "Trả response cho React",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        -144
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gửi Email biên lai": {
+      "main": [
+        [
+          {
+            "node": "Trả response cho React",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuẩn bị dữ liệu": {
+      "main": [
+        [
+          {
+            "node": "Lưu vào PostgreSQL qua FastAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xử lý ảnh bill": {
+      "main": [
+        [
+          {
+            "node": "Chuẩn bị dữ liệu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook nhận dữ liệu từ React": {
+      "main": [
+        [
+          {
+            "node": "Xử lý ảnh bill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu vào PostgreSQL qua FastAPI": {
+      "main": [
+        [
+          {
+            "node": "Gửi Email biên lai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c575fa55-6280-49f8-9af7-42de217e1e00",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+  },
+  "id": "zetZP7N3YBwjh09fWbZfF",
+  "tags": []
+}

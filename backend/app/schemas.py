@@ -85,3 +85,101 @@ class ContractResponse(ContractBase):
     class Config:
         from_attributes = True
 
+<<<<<<< HEAD
+=======
+# --- UTILITY BILL SCHEMAS --- #
+class UtilityBillBase(BaseModel):
+    room_id: int
+    thang_nam: str
+    chi_so_dien_cu: float = 0
+    chi_so_dien_moi: float = 0
+    chi_so_nuoc_cu: float = 0
+    chi_so_nuoc_moi: float = 0
+    tong_tien: float
+
+class UtilityBillCreate(UtilityBillBase):
+    pass
+
+class UtilityBillResponse(UtilityBillBase):
+    id: int
+    trang_thai: str
+    anh_bill: Optional[str] = None
+    pdf_link: Optional[str] = None
+    qr_url: Optional[str] = None
+    so_nguoi: Optional[int] = 1 # Thêm so_nguoi
+
+    class Config:
+        from_attributes = True
+
+# --- NEW BILLING SCHEMAS --- #
+class ActiveRoomBillingResponse(BaseModel):
+    room_id: int
+    ma_phong: str
+    tenant_name: str
+    tenant_email: str
+    so_nguoi: int
+    room_price: float
+    prev_electricity: float
+    prev_water: float
+
+class InvoiceSaveRequest(BaseModel):
+    phong: str
+    thang_nam: str
+    chi_so_dien_cu: float
+    chi_so_dien_moi: float
+    chi_so_nuoc_cu: float
+    chi_so_nuoc_moi: float
+    tong_tien: float
+    pdf_base64: Optional[str] = None
+    qr_url: Optional[str] = None
+
+# --- INCIDENT SCHEMAS --- #
+class IncidentBase(BaseModel):
+    loai_su_co: str
+    muc_do_khan_cap: str
+    mo_ta: str
+
+class IncidentCreate(IncidentBase):
+    room_id: int
+
+class IncidentClientCreate(IncidentBase):
+    pass # Tenant ID and Room ID are inferred from JWT
+
+class IncidentResponse(IncidentBase):
+    id: int
+    room_id: int
+    tenant_id: int
+    ngay_bao_cao: datetime
+    trang_thai: str
+
+    class Config:
+        from_attributes = True
+
+# --- BOOKING REQUEST SCHEMAS --- #
+class BookingRequestBase(BaseModel):
+    ho_ten: str
+    ngay_sinh: str
+    so_cccd: str
+    thuong_tru: str
+    ngay_cap: str
+    noi_cap: str
+    sdt: str
+    email: EmailStr
+    anh_khuon_mat: str
+    cccd_truoc: str
+    cccd_sau: str
+    room_id: int
+    ngay_bat_dau: Optional[date] = None
+    so_thang_thue: Optional[int] = 12
+
+class BookingRequestCreate(BookingRequestBase):
+    pass
+
+class BookingRequestResponse(BookingRequestBase):
+    id: int
+    trang_thai: str
+    ngay_tao: datetime
+
+    class Config:
+        from_attributes = True
+>>>>>>> feature/wf3-billing

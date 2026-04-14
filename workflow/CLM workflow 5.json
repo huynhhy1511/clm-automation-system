@@ -1,0 +1,255 @@
+{
+  "name": "CLM workflow 5",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "b905af05-7cf2-4e3e-a62e-1de715879150",
+      "name": "Kiểm tra hàng ngày 8h sáng",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const today = new Date();\nconst endDate = new Date($input.item.json.ngayKetThuc);\nconst diffTime = endDate - today;\nconst daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));\n\nreturn {\n  ...$input.item.json,\n  soNgayConLai: daysRemaining,\n  trangThaiHopDong: daysRemaining <= 0 ? \"Hết hạn\" : daysRemaining <= 30 ? \"Sắp hết hạn\" : \"Còn hiệu lực\"\n};"
+      },
+      "id": "069c2837-4885-4219-b8ba-1c8bbf6934e8",
+      "name": "Tính số ngày còn lại",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.soNgayConLai }}",
+              "rightValue": "30",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d8ad9015-6948-40f0-813c-054edc855be3",
+      "name": "Kiểm tra còn 30 ngày",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Thông báo hợp đồng sắp hết hạn - Phòng {{ $json.maPhong }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #ff9800;\">⏰ Thông báo hợp đồng sắp hết hạn</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Hợp đồng thuê phòng <strong>{{ $json.maPhong }}</strong> của bạn sắp hết hạn vào ngày <strong style=\"color: #ff9800;\">{{ $json.ngayKetThuc }}</strong> (còn {{ $json.soNgayConLai }} ngày).</p>\n  <div style=\"background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n    <p style=\"font-size: 16px; margin-bottom: 15px;\"><strong>Bạn muốn:</strong></p>\n    <div style=\"margin: 10px 0;\">\n      <a href=\"https://botaylun2.app.n8n.cloud/webhook/contract-response?action=renew&contractId={{ $json.id }}\" style=\"display: inline-block; background: #4caf50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-right: 10px;\">✅ Gia hạn hợp đồng</a>\n    </div>\n    <div style=\"margin: 10px 0;\">\n      <a href=\"https://botaylun2.app.n8n.cloud/webhook/contract-response?action=return&contractId={{ $json.id }}\" style=\"display: inline-block; background: #f44336; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;\">❌ Trả phòng</a>\n    </div>\n  </div>\n  <p style=\"font-size: 14px; color: #666;\">Vui lòng phản hồi trước ngày <strong>{{ $json.ngayKetThuc }}</strong> để chúng tôi sắp xếp phù hợp.</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
+        "options": {}
+      },
+      "id": "9d2071ba-dc8f-45bc-96c5-0465d4581b59",
+      "name": "Email hỏi ý kiến gia hạn",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2096,
+        224
+      ],
+      "webhookId": "f476f1a4-dc74-4064-8049-368d6a4cb009",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PDjIrqCaJnff5pye",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, ma_phong as \"maPhong\", ten_khach as \"tenKhach\", email, ngay_bat_dau as \"ngayBatDau\", ngay_ket_thuc as \"ngayKetThuc\" FROM hop_dong WHERE ngay_ket_thuc >= CURRENT_DATE AND ngay_ket_thuc <= CURRENT_DATE + INTERVAL '30 days' ORDER BY ngay_ket_thuc ASC",
+        "options": {}
+      },
+      "id": "ae26d6ba-563b-4d24-bb32-cb6991386525",
+      "name": "Lấy danh sách hợp đồng từ DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1408,
+        224
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "gdPIEZ4d9jgGIKji",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "contract-response",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "eb2c5d6b-a443-4bc2-9b91-f97652e12279",
+      "name": "Nhận phản hồi từ React",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1184,
+        448
+      ],
+      "webhookId": "2ba20120-0653-4158-a5b1-e86fdb6acc83"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "<__PLACEHOLDER_VALUE__fastapi_backend_url__>/api/contracts/update-decision",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contractId\": \"={{ $json.query.contractId }}\",\n  \"action\": \"={{ $json.query.action }}\",\n  \"timestamp\": \"={{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "1b1db01c-1293-49b4-98d9-7dc5e7dc5b59",
+      "name": "Cập nhật quyết định qua FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1408,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Cảm ơn bạn đã phản hồi. Chúng tôi sẽ xử lý yêu cầu của bạn.\",\n  \"contractId\": \"={{ $json.query.contractId }}\",\n  \"action\": \"={{ $json.query.action }}\"\n}",
+        "options": {}
+      },
+      "id": "f0f5bfcc-8ac9-4b90-ad52-c6037dbba479",
+      "name": "Trả response cho React1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1632,
+        448
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Kiểm tra hàng ngày 8h sáng": {
+      "main": [
+        [
+          {
+            "node": "Lấy danh sách hợp đồng từ DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tính số ngày còn lại": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra còn 30 ngày",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra còn 30 ngày": {
+      "main": [
+        [
+          {
+            "node": "Email hỏi ý kiến gia hạn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy danh sách hợp đồng từ DB": {
+      "main": [
+        [
+          {
+            "node": "Tính số ngày còn lại",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nhận phản hồi từ React": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật quyết định qua FastAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật quyết định qua FastAPI": {
+      "main": [
+        [
+          {
+            "node": "Trả response cho React1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "faffa083-dfe4-4685-a822-e79dab80e5d0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+  },
+  "id": "paUnb4JgivqBhPo-LVEdp",
+  "tags": []
+}
