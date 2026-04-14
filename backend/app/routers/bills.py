@@ -48,3 +48,162 @@ async def calculate_bill(
                     email = user.email
     
     if room:
+        payload = {
+            "phong": room.ma_phong,
+            "thangNam": new_bill.thang_nam,
+            "tongTien": new_bill.tong_tien,
+            "billId": new_bill.id,
+            "email": email or "",
+        }
+        async with httpx.AsyncClient() as client:
+            try:
+                await client.post(N8N_WEBHOOK_URL_BILLS, json=payload)
+            except Exception as e:
+                print(f"Webhook failed: {e}")
+                
+    return new_bill
+
+@router.get("/", response_model=list[schemas.UtilityBillResponse])
+async def list_bills(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    # Admin can see all, Tenant can only see their room's bills.
+    # To keep it simple, we just return all mapping if it's admin.
+    if current_user.role == "admin":
+        res = await db.execute(
+            select(models.UtilityBill, models.Contract.so_nguoi)
+            .outerjoin(models.Contract, models.UtilityBill.room_id == models.Contract.room_id)
+        )
+        bills = []
+        for bill, so_nguoi in res.all():
+            bill_data = schemas.UtilityBillResponse.model_validate(bill)
+            bill_data.so_nguoi = so_nguoi or 1
+            bills.append(bill_data)
+        return bills
+    else:
+        # Get tenant room
+        tenant_res = await db.execute(select(models.Tenant).where(models.Tenant.user_id == current_user.id))
+        tenant = tenant_res.scalar_one_or_none()
+        if not tenant:
+             return []
+        contract_res = await db.execute(select(models.Contract).where(models.Contract.tenant_id == tenant.id))
+        contract = contract_res.scalars().first()
+        if not contract:
+             return []
+
+        res = await db.execute(
+            select(models.UtilityBill, models.Contract.so_nguoi)
+            .where(models.UtilityBill.room_id == contract.room_id)
+            .outerjoin(models.Contract, models.UtilityBill.room_id == models.Contract.room_id)
+        )
+        bills = []
+        for bill, so_nguoi in res.all():
+            bill_data = schemas.UtilityBillResponse.model_validate(bill)
+            bill_data.so_nguoi = so_nguoi or 1
+            bills.append(bill_data)
+        return bills
+
+@router.get("/active-rooms", response_model=list[schemas.ActiveRoomBillingResponse])
+async def get_active_rooms(
+    db: AsyncSession = Depends(get_db),
+    current_admin=Depends(get_current_admin)
+):
+    """Lấy danh sách các phòng đang có hợp đồng hoạt động để chốt điện nước."""
+    # Join Room & Contract & Tenant & User
+    query = (
+        select(models.Room, models.Contract, models.Tenant, models.User)
+        .join(models.Contract, models.Room.id == models.Contract.room_id)
+        .join(models.Tenant, models.Contract.tenant_id == models.Tenant.id)
+        .join(models.User, models.Tenant.user_id == models.User.id)
+        .where(models.Contract.trang_thai == "Hiệu lực")
+    )
+    
+    result = await db.execute(query)
+    rows = result.all()
+    
+    active_rooms = []
+    for room, contract, tenant, user in rows:
+        # Lấy chỉ số cuối tháng trước từ UtilityBill gần nhất
+        last_bill_res = await db.execute(
+            select(models.UtilityBill)
+            .where(models.UtilityBill.room_id == room.id)
+            .order_by(models.UtilityBill.id.desc())
+            .limit(1)
+        )
+        last_bill = last_bill_res.scalar_one_or_none()
+        
+        active_rooms.append(schemas.ActiveRoomBillingResponse(
+            room_id=room.id,
+            ma_phong=room.ma_phong,
+            tenant_name=tenant.ho_ten,
+            tenant_email=user.email,
+            so_nguoi=contract.so_nguoi,
+            room_price=contract.gia_thue_chot,
+            prev_electricity=last_bill.chi_so_dien_moi if last_bill else 0,
+            prev_water=last_bill.chi_so_nuoc_moi if last_bill else 0
+        ))
+    
+    return active_rooms
+
+@router.post("/save")
+async def save_invoice(
+    payload: schemas.InvoiceSaveRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Endpoint gọi bởi n8n sau khi tạo PDF.
+    Tìm/Tạo Bill -> Giải mã Base64 -> Lưu file .pdf vật lý -> Cập nhật URL.
+    """
+    # 1. Tìm Room_id từ ma_phong (Khớp với trường 'phong' trong n8n)
+    room_res = await db.execute(select(models.Room).where(models.Room.ma_phong == payload.phong))
+    room = room_res.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy phòng {payload.phong}")
+    
+    # 2. Tìm xem đã có Bill cho phòng này và tháng này chưa
+    bill_res = await db.execute(
+        select(models.UtilityBill)
+        .where(models.UtilityBill.room_id == room.id, models.UtilityBill.thang_nam == payload.thang_nam)
+    )
+    bill = bill_res.scalar_one_or_none()
+    
+    if not bill:
+        # Nếu chưa có thì tạo mới
+        bill = models.UtilityBill(
+            room_id=room.id,
+            thang_nam=payload.thang_nam,
+            chi_so_dien_cu=payload.chi_so_dien_cu,
+            chi_so_dien_moi=payload.chi_so_dien_moi,
+            chi_so_nuoc_cu=payload.chi_so_nuoc_cu,
+            chi_so_nuoc_moi=payload.chi_so_nuoc_moi,
+            tong_tien=payload.tong_tien,
+            trang_thai="Chưa thanh toán"
+        )
+        db.add(bill)
+        await db.flush() # Để có bill.id
+    else:
+        # Nếu có rồi thì cập nhật thông tin
+        bill.chi_so_dien_cu = payload.chi_so_dien_cu
+        bill.chi_so_dien_moi = payload.chi_so_dien_moi
+        bill.chi_so_nuoc_cu = payload.chi_so_nuoc_cu
+        bill.chi_so_nuoc_moi = payload.chi_so_nuoc_moi
+        bill.tong_tien = payload.tong_tien
+
+    # 3. Giải mã và lưu PDF (Chỉ thực hiện nếu có dữ liệu)
+    if payload.pdf_base64:
+        try:
+            pdf_bytes = base64.b64decode(payload.pdf_base64)
+            file_name = f"invoice_{bill.id}_{payload.thang_nam.replace('/', '-')}.pdf"
+            file_path = os.path.join("static", "invoices", file_name)
+            with open(file_path, "wb") as f:
+                f.write(pdf_bytes)
+            bill.pdf_link = f"/static/invoices/{file_name}"
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Lỗi xử lý file PDF: {str(e)}")
+    
+    if payload.qr_url:
+        bill.qr_url = payload.qr_url
+    
+    await db.commit()
+    return {"message": "Hóa đơn đã được lưu thành công", "pdf_link": bill.pdf_link}
