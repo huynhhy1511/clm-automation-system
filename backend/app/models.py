@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text, BigInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -66,6 +66,7 @@ class Contract(Base):
     trang_thai = Column(String(50), default="Chờ bàn giao") # Chờ bàn giao, Đã bàn giao, Đã thanh lý
     pdf_link = Column(String(255), nullable=True)
     pdf_data = Column(Text, nullable=True)
+    payos_order_code = Column(BigInteger, unique=True, nullable=True) # Để link với thanh toán PayOS
     so_nguoi = Column(Integer, default=1, nullable=False) # Thêm số người để tính tiền nước
     
     tenant = relationship("Tenant", back_populates="contracts")

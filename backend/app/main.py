@@ -8,7 +8,7 @@ import os
 from fastapi.staticfiles import StaticFiles
 
 # Import các routers mới
-from app.routers import auth, contracts, rooms, bills, incidents, tenants, booking_requests
+from app.routers import auth, contracts, rooms, bills, incidents, tenants, booking_requests, payments
 
 from fastapi.exceptions import RequestValidationError
 from fastapi import Request
@@ -67,6 +67,7 @@ app.include_router(bills.router, prefix="/api/bills", tags=["bills"])
 app.include_router(incidents.router, prefix="/api/client/incidents", tags=["client_incidents"])
 app.include_router(tenants.router, prefix="/api/tenants", tags=["tenants"])
 app.include_router(booking_requests.router, prefix="/api")
+app.include_router(payments.router, prefix="/api", tags=["payments"])
 
 @app.get("/")
 def root():
