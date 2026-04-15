@@ -54,6 +54,10 @@ async def calculate_bill(
             "tongTien": new_bill.tong_tien,
             "billId": new_bill.id,
             "email": email or "",
+            "chiSoDienCu": new_bill.chi_so_dien_cu,
+            "chiSoDienMoi": new_bill.chi_so_dien_moi,
+            "chiSoNuocCu": new_bill.chi_so_nuoc_cu,
+            "chiSoNuocMoi": new_bill.chi_so_nuoc_moi,
         }
         async with httpx.AsyncClient() as client:
             try:

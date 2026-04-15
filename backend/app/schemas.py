@@ -85,8 +85,6 @@ class ContractResponse(ContractBase):
     class Config:
         from_attributes = True
 
-<<<<<<< HEAD
-=======
 # --- UTILITY BILL SCHEMAS --- #
 class UtilityBillBase(BaseModel):
     room_id: int
@@ -125,10 +123,10 @@ class ActiveRoomBillingResponse(BaseModel):
 class InvoiceSaveRequest(BaseModel):
     phong: str
     thang_nam: str
-    chi_so_dien_cu: float
-    chi_so_dien_moi: float
-    chi_so_nuoc_cu: float
-    chi_so_nuoc_moi: float
+    chi_so_dien_cu: float = 0
+    chi_so_dien_moi: float = 0
+    chi_so_nuoc_cu: float = 0
+    chi_so_nuoc_moi: float = 0
     tong_tien: float
     pdf_base64: Optional[str] = None
     qr_url: Optional[str] = None
@@ -182,4 +180,3 @@ class BookingRequestResponse(BookingRequestBase):
 
     class Config:
         from_attributes = True
->>>>>>> feature/wf3-billing

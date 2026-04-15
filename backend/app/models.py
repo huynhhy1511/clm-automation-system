@@ -71,8 +71,6 @@ class Contract(Base):
     tenant = relationship("Tenant", back_populates="contracts")
     room = relationship("Room", back_populates="contracts")
 
-<<<<<<< HEAD
-=======
 # 4. Bảng Hóa Đơn (UtilityBills)
 class UtilityBill(Base):
     __tablename__ = "utility_bills"
@@ -131,4 +129,3 @@ class BookingRequest(Base):
     ngay_tao = Column(DateTime, default=datetime.utcnow)
 
     room = relationship("Room", back_populates="booking_requests")
->>>>>>> feature/wf3-billing
