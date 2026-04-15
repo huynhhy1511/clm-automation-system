@@ -12,7 +12,7 @@ N8N_WEBHOOK_URL_INCIDENT = "http://n8n:5678/webhook/bao-cao-su-co"
 
 @router.post("/", response_model=schemas.IncidentResponse)
 async def create_incident(
-    incident: schemas.IncidentClientCreate, 
+    incident: schemas.IncidentClientCreate,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -60,7 +60,25 @@ async def create_incident(
 @router.get("/", response_model=list[schemas.IncidentResponse])
 async def list_incidents(
     db: AsyncSession = Depends(get_db),
-    current_admin=Depends(get_current_admin)
+    current_user=Depends(get_current_user)
 ):
-     res = await db.execute(select(models.Incident))
-     return res.scalars().all()
+    # If user is admin, return all incidents
+    if current_user.role == "admin":
+        res = await db.execute(select(models.Incident).order_by(models.Incident.ngay_bao_cao.desc()))
+        return res.scalars().all()
+
+    # If user is a tenant, find their tenant profile
+    tenant_res = await db.execute(select(models.Tenant).where(models.Tenant.user_id == current_user.id))
+    tenant = tenant_res.scalar_one_or_none()
+
+    # If no tenant profile, they have no incidents
+    if not tenant:
+        return []
+
+    # Return incidents for the specific tenant
+    res = await db.execute(
+        select(models.Incident)
+        .where(models.Incident.tenant_id == tenant.id)
+        .order_by(models.Incident.ngay_bao_cao.desc())
+    )
+    return res.scalars().all()
