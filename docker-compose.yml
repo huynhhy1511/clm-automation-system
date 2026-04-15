@@ -103,6 +103,5 @@ services:
 
 volumes:
   n8n_data:
-    - /home/node/.n8n
   postgres_data:
   pgadmin_data:

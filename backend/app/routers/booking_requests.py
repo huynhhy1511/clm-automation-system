@@ -164,11 +164,45 @@ async def approve_booking_request(
     booking.trang_thai = "Đã duyệt"
     room.trang_thai = "Đã cọc"
 
+    # 9. Create PayOS Payment Link
+    from app.core.payos_provider import payos
+    from payos.types import CreatePaymentLinkRequest
+    from app.core.config import settings
+    import time
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+
+    # Generate unique order code (integer) - shorter to be safe with all systems
+    order_code = int(str(int(time.time() * 1000))[-9:])
+    new_contract.payos_order_code = order_code
+    logger.info(f"Generated order_code: {order_code}")
+
+    payment_data = CreatePaymentLinkRequest(
+        orderCode=order_code,
+        amount=int(room.gia_thue), 
+        description=f"HD {room.ma_phong}",
+        cancelUrl=settings.PAYOS_CANCEL_URL,
+        returnUrl=settings.PAYOS_RETURN_URL
+    )
+
+    payos_url = f"https://payos.vn/error-placeholder-{order_code}"
+    payos_qr = ""
+    try:
+        from app.core.payos_provider import payos
+        if settings.PAYOS_CLIENT_ID and settings.PAYOS_API_KEY and payos:
+            payment_response = await payos.payment_requests.create(payment_data)
+            payos_url = getattr(payment_response, 'checkout_url', getattr(payment_response, 'checkoutUrl', ''))
+            payos_qr = getattr(payment_response, 'qr_code', getattr(payment_response, 'qrCode', ''))
+            logger.info(f"PAYOS SUCCESS: {payos_url}")
+        else:
+            logger.warning("PAYOS SKIPPED: Missing keys or provider")
+    except Exception as e:
+        logger.error(f"PAYOS ERROR: {str(e)}")
+
     await db.commit()
 
-    # 9. Trigger n8n Webhook - payload phải khớp với "CLM workflow 1" (flat camelCase)
+    # 10. Trigger n8n Webhook
     webhook_payload = {
-        # Fields dùng bởi n8n Code node: $input.item.json.body.X
         "hoTen": booking.ho_ten,
         "phong": room.ma_phong,
         "giaThue": room.gia_thue,
@@ -177,6 +211,8 @@ async def approve_booking_request(
         "ngayKetThuc": str(ngay_kt),
         "soThang": so_thang,
         "contractId": new_contract.id,
+        "payosUrl": payos_url,   # Link trang web thanh toán
+        "payosQr": payos_qr,     # Chuỗi VietQR để quét bằng App ngân hàng
         # Email data — để n8n gửi mail xác nhận cho khách
         "email": booking.email,
         "sdt": booking.sdt,
@@ -190,13 +226,14 @@ async def approve_booking_request(
     
     try:
         async with httpx.AsyncClient() as client:
-            await client.post("http://n8n:5678/webhook/tao-hop-dong", json=webhook_payload, timeout=8.0)
+            await client.post("http://n8n:5678/webhook/tao-hop-dong", json=webhook_payload, timeout=12.0)
     except Exception as e:
         print(f"Failed to trigger n8n webhook: {e}")
 
     return {
-        "message": "Duyệt thành công. Hợp đồng và Tài khoản đã được tạo.",
+        "message": "Duyệt thành công. Link thanh toán PayOS đã được tạo.",
         "tenant_id": new_tenant.id,
         "contract_id": new_contract.id,
+        "payos_url": payos_url,
         "email_sent_to": booking.email
     }
