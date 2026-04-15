@@ -3,19 +3,32 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "chot-dien-nuoc",
-        "options": {}
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Hóa đơn tiền nhà P.{{ $json.phong }} - Tháng {{ new Date().getMonth() + 1 }}",
+        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN TIỀN NHÀ P.{{ $json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ này, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> Tháng sau (trả trước)</li>\n      <li><b>Điện & Nước:</b> Chỉ số tháng vừa qua (trả sau)</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $json.val_tong }} đ</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số điện nước và các khoản phí dịch vụ, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
       },
-      "id": "6056cbe1-8e9b-4ced-8458-194f7a38e5c4",
-      "name": "Webhook (Chốt tay)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "id": "a474d497-5779-4f44-88a3-bbe31fe69589",
+      "name": "Gửi Mail Hóa Đơn",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
       "position": [
-        -192,
-        592
+        816,
+        1456
       ],
-      "webhookId": "06724a3b-90da-4f88-8e36-af580575e8ec"
+      "webhookId": "15a0314b-bcfa-40b4-96c2-f2ffea76da59",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GDkRrIaMd4vssTbO",
+          "name": "Gmail account"
+        }
+      }
     },
     {
       "parameters": {
@@ -28,57 +41,53 @@
           ]
         }
       },
-      "id": "9da51a10-43d0-40a8-8c91-f52bf46033b2",
-      "name": "Schedule (Ngày 25)",
+      "id": "252c2082-a803-42ae-9c9d-7a720011c2c8",
+      "name": "Lịch ngày 25",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        -192,
-        800
+        -528,
+        1360
       ]
     },
     {
       "parameters": {
-        "url": "http://backend:8000/api/rooms/fixed-rate",
         "options": {}
       },
-      "id": "60f72df9-2087-465b-8265-70816a712621",
-      "name": "Lấy DS Phòng Trọn Gói",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        0,
-        800
-      ],
-      "notesInFlow": true,
-      "notes": "API này BE phải trả về mảng các phòng khoán"
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "body",
-        "options": {}
-      },
-      "id": "c4725e07-6c6a-4609-8a7a-983e24cf9ba6",
-      "name": "Tách từng phòng",
-      "type": "n8n-nodes-base.itemLists",
+      "id": "3d0fcd8e-cc86-4810-bc94-d92a71de916a",
+      "name": "1. Cài đặt Đơn giá",
+      "type": "n8n-nodes-base.set",
       "typeVersion": 3,
       "position": [
-        208,
-        800
+        -288,
+        1264
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const d = $input.item.json.body || $input.item.json;\n\n// 1. Tính toán & Định dạng tiền\nconst tongTien = d.tongTien || 3500000; // Mặc định nếu API ko truyền\nd.tongTienDep = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tongTien);\n\n// 2. Tạo Link VietQR\nconst bankCode = 'MB';\nconst accNumber = '0905881525';\nconst accName = 'HUYNH NGOC HUY';\nconst content = `ThanhToan_Phong_${d.phong || 'PT'}`;\nd.qrCodeUrl = `https://img.vietqr.io/image/${bankCode}-${accNumber}-compact2.png?amount=${tongTien}&addInfo=${content}&accountName=${accName}`;\n\nconst today = new Date();\nconst dateStr = today.toLocaleDateString('vi-VN');\n\n// 3. Khung HTML Hóa đơn chuẩn\nconst htmlInvoice = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  @page { size: A4; margin: 20mm; }\n  body { font-family: \"Arial\", sans-serif; color: #333; line-height: 1.4; }\n  .header { border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }\n  .header h1 { color: #1e40af; margin: 0; font-size: 24px; text-transform: uppercase; }\n  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }\n  th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }\n  th { background-color: #f8fafc; }\n  .total { font-size: 20px; font-weight: bold; color: #dc2626; text-align: right; }\n  .qr-section { text-align: center; margin-top: 30px; }\n  .qr-section img { width: 220px; border: 2px solid #1e40af; border-radius: 10px; padding: 10px; }\n</style>\n</head>\n<body>\n  <div class=\"header\">\n    <h1>HÓA ĐƠN TIỀN TRỌ - THÁNG ${today.getMonth() + 1}/${today.getFullYear()}</h1>\n    <p>Ngày lập: ${dateStr} | <b>Phòng: ${d.phong || '...'}</b></p>\n  </div>\n  <p><b>Khách hàng:</b> ${d.hoTen || 'Khách thuê'}</p>\n  <table>\n    <tr><th>Hạng mục</th><th>Số lượng/Chỉ số</th><th>Thành tiền</th></tr>\n    <tr><td>Tiền phòng</td><td>1 tháng</td><td>... đ</td></tr>\n    <tr><td>Tiền điện</td><td>${d.soDien ? d.soDien + ' kWh' : 'Khoán'}</td><td>... đ</td></tr>\n    <tr><td>Tiền nước</td><td>${d.soNuoc ? d.soNuoc + ' m3' : 'Khoán'}</td><td>... đ</td></tr>\n  </table>\n  <div class=\"total\">TỔNG THANH TOÁN: ${d.tongTienDep}</div>\n  <div class=\"qr-section\">\n    <h3>MÃ QR THANH TOÁN</h3>\n    <img src=\"${d.qrCodeUrl}\" alt=\"Mã QR\">\n    <p><i>Cảm ơn quý khách!</i></p>\n  </div>\n</body>\n</html>`;\n\n// 4. Đóng gói cho Gotenberg\nreturn {\n  json: d,\n  binary: {\n    indexHtml: {\n      data: Buffer.from(htmlInvoice, 'utf-8').toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'invoice.html'\n    }\n  }\n};"
+        "jsCode": "// 1. Hàm lấy dữ liệu cực mạnh (Tìm mọi ngõ ngách)\nconst getInput = () => {\n  const raw = $input.item.json;\n  return raw.body?.body || raw.body || raw;\n};\n\n// 2. Lấy cấu hình giá (Đảm bảo lấy đúng từ node Cài đặt)\nconst getConfig = () => {\n  try {\n    return $node[\"1. Cài đặt Đơn giá\"].json;\n  } catch (e) {\n    return { gia_dien: 3500, gia_nuoc_khoan: 100000, phi_dv: 50000 };\n  }\n};\n\nconst d = getInput();\nconst config = getConfig();\n\n// 3. Ép kiểu về số (Number) để tránh lỗi NaN\nconst dienCu = Number(d.chiSoDienCu || 0);\nconst dienMoi = Number(d.chiSoDienMoi || 0);\nconst giaDien = Number(config.gia_dien || 3500);\nconst tienPhong = Number(d.tienPhong || d.tongTien || 0); // Ưu tiên tiền phòng riêng, nếu ko lấy tổng\nconst giaNuocDV = Number(config.gia_nuoc_khoan || 0) + Number(config.phi_dv || 0);\n\n// 4. Tính toán chi tiết\nconst val_dien = (dienMoi - dienCu) * giaDien;\nconst val_tong = tienPhong + val_dien + giaNuocDV;\n\n// 5. Định dạng tiền tệ VNĐ\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\n// 6. Trả về kết quả (Full Option)\nreturn {\n  json: {\n    ...d,\n    // Số thô để lưu Database (Node 6)\n    val_dien,\n    val_tong,\n    val_nuoc_dv: giaNuocDV,\n    val_phong: tienPhong,\n    // Link QR\n    qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${val_tong}&addInfo=ThanhToan_P${d.phong}&accountName=HUYNH%20NGOC%20HUY`,\n    // Chữ để hiện lên PDF (Node 3)\n    txt_phong: fmt(tienPhong),\n    txt_dien: fmt(val_dien),\n    txt_nuoc_dv: fmt(giaNuocDV),\n    txt_tong: fmt(val_tong),\n    dien_tieu_thu: dienMoi - dienCu\n  }\n};"
       },
-      "id": "92dc623b-aeb7-47a6-99d8-3fdac8542ee7",
-      "name": "Tạo HTML & Tính QR",
+      "id": "9263117f-fa6c-44d5-87eb-865788499c60",
+      "name": "2. Tính Toán & VietQR",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
-        704
+        -32,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json;\nconst today = new Date();\n\nconst html = `\n<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  body { font-family: \"Arial\", sans-serif; line-height: 1.6; color: #333; }\n  .header { border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }\n  table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }\n  th { background-color: #f8fafc; color: #1e40af; }\n  .total-row { font-size: 20px; font-weight: bold; color: #dc2626; text-align: right; margin-top: 20px; }\n</style>\n</head>\n<body>\n  <div class=\"header\">\n    <p style=\"float: right;\">Ngày lập: ${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}</p>\n    <h2 style=\"color: #1e40af; margin: 0;\">HÓA ĐƠN TIỀN NHÀ - P.${d.phong}</h2>\n  </div>\n\n  <p><b>Khách hàng:</b> ${d.hoTen || 'Quý khách'}</p>\n\n  <table style=\"width:100%; border-collapse: collapse;\">\n  <thead>\n    <tr style=\"background-color: #f1f5f9;\">\n      <th style=\"padding:10px; border:1px solid #ddd;\">Hạng mục</th>\n      <th style=\"padding:10px; border:1px solid #ddd;\">Chỉ số / Số lượng</th>\n      <th style=\"padding:10px; border:1px solid #ddd;\">Thành tiền</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td style=\"padding:10px; border:1px solid #ddd;\">Tiền phòng</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:center;\">1 tháng</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:right;\"><b>${d.txt_phong}</b></td>\n    </tr>\n    <tr>\n      <td style=\"padding:10px; border:1px solid #ddd;\">Tiền điện</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:center;\">${d.chiSoDienCu} ➔ ${d.chiSoDienMoi}</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:right;\"><b>${d.txt_dien}</b></td>\n    </tr>\n    <tr>\n      <td style=\"padding:10px; border:1px solid #ddd;\">Nước & Dịch vụ</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:center;\">Khoán</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:right;\"><b>${d.txt_nuoc_dv}</b></td>\n    </tr>\n  </tbody>\n</table>\n\n<div style=\"text-align:right; margin-top:20px; font-size:20px;\">\n  <span style=\"color:#64748b;\">TỔNG THANH TOÁN:</span> <b style=\"color:#dc2626;\">${d.txt_tong}</b>\n</div>\n\n  <div style=\"text-align: center; margin-top: 30px;\">\n    <p><i>Vui lòng quét mã QR bên dưới để thanh toán</i></p>\n    <img src=\"${d.qrUrl}\" width=\"220\" style=\"border: 1px solid #ddd; padding: 10px; border-radius: 8px;\">\n  </div>\n</body>\n</html>\n`;\n\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
+      },
+      "id": "5962396f-369d-4858-9a12-33dd8892f718",
+      "name": "3. Dàn trang HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        1264
       ]
     },
     {
@@ -98,87 +107,33 @@
         },
         "options": {}
       },
-      "id": "774cc86d-1f1f-41b3-862c-924de10d5cb2",
-      "name": "Gotenberg: Tạo PDF",
+      "id": "b20af2d2-1e0f-41d0-b55b-6a65249c45fe",
+      "name": "4. Gotenberg (PDF)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        608,
-        704
+        368,
+        1264
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const pdfFile = $input.item.binary?.data;\nif (!pdfFile) throw new Error(\"Gotenberg lỗi!\");\n\nconst fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst prevData = $('Tạo HTML & Tính QR').item.json;\n\nreturn {\n  json: { ...prevData, pdfBase64: pdfBase64 },\n  binary: {\n    data: {\n      data: pdfBase64,\n      mimeType: 'application/pdf',\n      fileName: `HoaDon_P${prevData.phong || 'X'}.pdf`,\n      fileExtension: 'pdf'\n    }\n  }\n};"
+        "jsCode": "const fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst info = $node[\"2. Tính Toán & VietQR\"].json;\n\nreturn {\n  json: { ...info, pdfBase64 },\n  binary: { data: await this.helpers.prepareBinaryData(fileBuffer, `HoaDon_P${info.phong}.pdf`, 'application/pdf') }\n};"
       },
-      "id": "ab03b56c-eecb-4b12-a3ae-6857f486f359",
-      "name": "Đóng gói PDF",
+      "id": "1ef57f0e-ecd0-414c-ab9b-4cb2798c92e1",
+      "name": "5. Đóng gói PDF & Base64",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        816,
-        704
+        560,
+        1264
       ]
     },
     {
       "parameters": {
-        "sendTo": "={{ $json.email }}",
-        "subject": "=Hóa đơn tháng này - Phòng {{ $json.phong }}",
-        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px;'>\n  <h2>Xin chào {{ $json.hoTen }},</h2>\n  <p>Ban quản lý xin gửi hóa đơn tiền phòng tháng này. Tổng số tiền cần thanh toán là: <b style='color:red;'>{{ $json.tongTienDep }}</b>.</p>\n  <p>Bạn có thể mở file PDF đính kèm hoặc quét trực tiếp mã QR dưới đây để thanh toán nhanh:</p>\n  <img src=\"{{ $json.qrCodeUrl }}\" width=\"250\" style=\"border:2px solid #1e40af; border-radius:8px;\">\n  <p>Trân trọng,<br>Ban Quản Lý</p>\n</div>",
-        "options": {
-          "attachmentsUi": {
-            "attachmentsBinary": [
-              {}
-            ]
-          }
-        }
-      },
-      "id": "28104e44-6e4f-4104-ae1e-d361d02ee0d0",
-      "name": "Gửi Mail Hóa Đơn",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [
-        1008,
-        704
-      ],
-      "webhookId": "15a0314b-bcfa-40b4-96c2-f2ffea76da59",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "PDjIrqCaJnff5pye",
-          "name": "Gmail account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "sendDocument",
-        "chatId": "6126814953",
-        "file": "data",
-        "additionalFields": {
-          "caption": "=💸 Đã gửi Hóa Đơn phòng {{ $json.phong }}. Tổng thu: {{ $json.tongTienDep }}"
-        }
-      },
-      "id": "bc0557c5-3c21-449d-ba97-b1f7ee5033d5",
-      "name": "Tele: Báo Cáo",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.1,
-      "position": [
-        1008,
-        896
-      ],
-      "webhookId": "1e3f64da-20ca-4d4a-a4f5-ada2b55abc34",
-      "credentials": {
-        "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
-          "name": "Telegram account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "method": "POST",
-        "url": "http://backend:8000/api/invoices/save",
+        "url": "http://backend:8000/api/bills/save",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -187,16 +142,32 @@
               "value": "={{ $json.phong }}"
             },
             {
+              "name": "tong_tien",
+              "value": "={{ $json.val_tong }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            },
+            {
+              "name": "qr_url",
+              "value": "={{ $json.qrUrl }}"
+            },
+            {
               "name": "thang_nam",
               "value": "={{ $json.thangNam }}"
+            },
+            {
+              "name": "chi_so_dien_moi",
+              "value": "={{ $json.chiSoDienMoi }}"
             },
             {
               "name": "chi_so_dien_cu",
               "value": "={{ $json.chiSoDienCu }}"
             },
             {
-              "name": "chi_so_dien_moi",
-              "value": "={{ $json.chiSoDienMoi }}"
+              "name": "thang_nam",
+              "value": "={{ $json.thangNam }}"
             },
             {
               "name": "chi_so_nuoc_cu",
@@ -205,116 +176,145 @@
             {
               "name": "chi_so_nuoc_moi",
               "value": "={{ $json.chiSoNuocMoi }}"
-            },
-            {
-              "name": "tong_tien",
-              "value": "={{ $json.tongTien }}"
-            },
-            {
-              "name": "pdf_base64",
-              "value": "={{ $json.pdfBase64 }}"
-            },
-            {
-              "name": "qr_url",
-              "value": "={{ $json.qrCodeUrl }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "db1e5fe5-b1e4-4557-8082-461eeb965c50",
-      "name": "Lưu Database (FastAPI)",
+      "id": "72374ff8-bd5d-43b3-a5a0-5fa129300635",
+      "name": "6. Lưu Database",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1008,
-        512
+        816,
+        1264
       ]
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=🚀 [BÁO CÁO HÓA ĐƠN] 🏠 Phòng: {{ $json.phong }} 👤 Khách hàng: {{ $json.hoTen }} 💸 Tổng thanh toán: {{ $json.tong_cong_fmt }} đ  ✅ Trạng thái: - Đã gửi Email hóa đơn cho khách. - Đã lưu thông tin & Base64 vào Database. - QR thanh toán: {{ $json.qrUrl }}"
+        }
+      },
+      "id": "ee7d5f8c-e543-44e6-b0d3-8ef89f88ec18",
+      "name": "7. Tele: Báo cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        1104
+      ],
+      "webhookId": "d7a184a3-7d70-418f-bfbb-c6d2861f76a4",
+      "credentials": {
+        "telegramApi": {
+          "id": "xJ5hM6BFpWwN99k8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chot-dien-nuoc",
+        "options": {}
+      },
+      "id": "067374eb-297a-481f-855c-ca347f580558",
+      "name": "Webhook (Chốt tay)1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        1168
+      ],
+      "webhookId": "33b34c2a-6f84-4498-b83f-a215166d7794"
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook (Chốt tay)": {
+    "Lịch ngày 25": {
       "main": [
         [
           {
-            "node": "Tạo HTML & Tính QR",
+            "node": "1. Cài đặt Đơn giá",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Schedule (Ngày 25)": {
+    "1. Cài đặt Đơn giá": {
       "main": [
         [
           {
-            "node": "Lấy DS Phòng Trọn Gói",
+            "node": "2. Tính Toán & VietQR",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Lấy DS Phòng Trọn Gói": {
+    "2. Tính Toán & VietQR": {
       "main": [
         [
           {
-            "node": "Tách từng phòng",
+            "node": "3. Dàn trang HTML",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Tách từng phòng": {
+    "3. Dàn trang HTML": {
       "main": [
         [
           {
-            "node": "Tạo HTML & Tính QR",
+            "node": "4. Gotenberg (PDF)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Tạo HTML & Tính QR": {
+    "4. Gotenberg (PDF)": {
       "main": [
         [
           {
-            "node": "Gotenberg: Tạo PDF",
+            "node": "5. Đóng gói PDF & Base64",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Gotenberg: Tạo PDF": {
+    "5. Đóng gói PDF & Base64": {
       "main": [
         [
           {
-            "node": "Đóng gói PDF",
+            "node": "6. Lưu Database",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Đóng gói PDF": {
-      "main": [
-        [
+          },
+          {
+            "node": "7. Tele: Báo cáo",
+            "type": "main",
+            "index": 0
+          },
           {
             "node": "Gửi Mail Hóa Đơn",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Webhook (Chốt tay)1": {
+      "main": [
+        [
           {
-            "node": "Tele: Báo Cáo",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Lưu Database (FastAPI)",
+            "node": "1. Cài đặt Đơn giá",
             "type": "main",
             "index": 0
           }
@@ -328,10 +328,10 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "63d7e531-1392-4b8a-8f81-5d04d9f29adb",
+  "versionId": "c76dd2bb-d9a5-4a7a-88cc-ea1fcfd4f0e4",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+    "instanceId": "d92e635d9923c5e33aeed71b490c99116d0f169f30a0e3b5c6dbc179b7236fd2"
   },
   "id": "8gY1u4LUK6tzD7uIWLxkU",
   "tags": []

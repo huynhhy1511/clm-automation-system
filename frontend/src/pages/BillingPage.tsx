@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api } from "../lib/api";
 import { Zap, Droplets, User, Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import axios from "axios";
 

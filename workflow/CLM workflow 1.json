@@ -123,7 +123,7 @@
     {
       "parameters": {
         "sendTo": "={{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}",
-        "subject": "=🎉 Hợp đồng thuê phòng {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }} & Tài khoản đăng nhập",
+        "subject": "=🎉 Hợp đồng thuê phòng {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }} ",
         "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'>\n<div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'>\n  <h2 style='color:white;margin:0'>🏠 Chào mừng đến CLM System!</h2>\n</div>\n<div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'>\n  <p>Xin chào <strong>{{ $('Format & Tạo HTML Hợp Đồng').item.json.hoTen }}</strong>,</p>\n  <p>Hợp đồng thuê phòng đã ký kết thành công. <b>File PDF hợp đồng đính kèm trong email này.</b></p>\n  <div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0'>\n    <b style='color:#1e40af'>📋 Thông tin hợp đồng</b><br><br>\n    🏠 Phòng: <b>{{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }}</b><br>\n    💰 Giá thuê: <b>{{ $('Format & Tạo HTML Hợp Đồng').item.json.giaThueFormatted }}/tháng</b><br>\n    🔐 Tiền cọc: {{ $('Format & Tạo HTML Hợp Đồng').item.json.tienCocFormatted }}<br>\n    📅 Từ: {{ $('Format & Tạo HTML Hợp Đồng').item.json.ngayBatDau }} → {{ $('Format & Tạo HTML Hợp Đồng').item.json.ngayKetThuc }}<br>\n    ⏱️ Thời hạn: {{ $('Format & Tạo HTML Hợp Đồng').item.json.soThangText }}\n  </div>\n  <p style='color:#64748b;font-size:12px;margin-top:20px'>Trân trọng,<br><b>Ban Quản Lý</b></p>\n</div></div>",
         "options": {
           "attachmentsUi": {
@@ -144,8 +144,8 @@
       "webhookId": "90d7d525-f661-42a5-b1c9-b64189d15bcd",
       "credentials": {
         "gmailOAuth2": {
-          "id": "PDjIrqCaJnff5pye",
-          "name": "Gmail account"
+          "id": "Vvlx3WVPkECrIkpz",
+          "name": "Gmail account 2"
         }
       }
     },
@@ -166,7 +166,7 @@
       "webhookId": "03caecf4-5f9f-4641-8ec4-ea986b4ee60e",
       "credentials": {
         "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
+          "id": "xJ5hM6BFpWwN99k8",
           "name": "Telegram account"
         }
       }
@@ -304,10 +304,10 @@
     "timeSavedMode": "fixed",
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "9afebb82-3016-47be-a341-690b7a4ea193",
+  "versionId": "29d2bd6e-5a8e-4888-b3c7-621e553867f6",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
+    "instanceId": "d92e635d9923c5e33aeed71b490c99116d0f169f30a0e3b5c6dbc179b7236fd2"
   },
   "id": "i5nKO7aBizMrVWiYJv6nl",
   "tags": []

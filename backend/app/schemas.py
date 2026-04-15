@@ -85,6 +85,7 @@ class ContractResponse(ContractBase):
     class Config:
         from_attributes = True
 
+
 # --- UTILITY BILL SCHEMAS --- #
 class UtilityBillBase(BaseModel):
     room_id: int
@@ -180,3 +181,4 @@ class BookingRequestResponse(BookingRequestBase):
 
     class Config:
         from_attributes = True
+

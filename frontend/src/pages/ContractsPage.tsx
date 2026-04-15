@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api } from "../lib/api";
 import { FileText, Calendar, Trash2, CheckCircle } from "lucide-react";
 
 type Contract = {

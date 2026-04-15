@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api } from "../lib/api";
 import { Plus, Home, Tag, Check, X } from "lucide-react";
 
 type Room = {

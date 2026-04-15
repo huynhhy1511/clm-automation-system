@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowUpRight, Home, ArrowRight, UserCircle, Calendar as CalendarIcon, IdCard } from "lucide-react";
-import { api } from "@/lib/api";
+import { api } from "../lib/api";
 import { Link } from "react-router-dom";
 
 export function DashboardPage() {

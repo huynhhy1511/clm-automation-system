@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api } from "../lib/api";
 import { AlertCircle, FileText, Send, X, ShieldAlert } from "lucide-react";
 
 type Incident = {

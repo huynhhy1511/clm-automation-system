@@ -1,148 +1,188 @@
 {
-  "name": "CLM workflow 2",
+  "name": "WF2 - Bàn Giao Phòng (Đã sửa lỗi File)",
   "nodes": [
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "ban-giao-phong",
-        "responseMode": "onReceived",
-        "options": {}
-      },
-      "id": "8e15637a-ddd0-4664-8213-5fb7060ccab5",
-      "name": "Webhook Bàn Giao",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [0, 0]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "\nconst d = $input.item.json.body || $input.item.json;\n\nfunction extractBase64(str) {\n  if (!str) return null;\n  const parts = str.split(',');\n  return parts.length > 1 ? parts[1] : parts[0];\n}\n\nconst cccd1 = extractBase64(d.cccdTruoc);\nconst cccd2 = extractBase64(d.cccdSau);\nconst pdf = extractBase64(d.pdfBase64);\n\n$binary = {};\n\nif (cccd1) {\n    $binary.cccdTruoc = {\n        data: cccd1,\n        mimeType: 'image/jpeg',\n        fileName: `CCCD_Truoc_P${d.phong}.jpg`\n    };\n}\n\nif (cccd2) {\n    $binary.cccdSau = {\n        data: cccd2,\n        mimeType: 'image/jpeg',\n        fileName: `CCCD_Sau_P${d.phong}.jpg`\n    };\n}\n\nif (pdf) {\n    $binary.pdfFile = {\n        data: pdf,\n        mimeType: 'application/pdf',\n        fileName: `HopDong_P${d.phong}.pdf`\n    };\n}\n\nreturn { json: d, binary: $binary };\n"
-      },
-      "id": "4eca8803-5c3d-4da1-bf21-725ab665a2d8",
-      "name": "Parse Base64 -> Binary",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [200, 0]
-    },
-    {
-      "parameters": {
-        "chatId": "6126814953",
-        "text": "={{ '✅ BÀN GIAO PHÒNG MỚI:\\nPhòng: ' + $json.phong + '\\nKhách: ' + $json.hoTen + '\\nSĐT: ' + $json.sdt + '\\nBot sẽ gửi kèm 3 tệp hồ sơ lưu trú ngay sau tin nhắn này!' }}",
-        "additionalFields": {}
-      },
-      "id": "f7a9e3e7-6bba-4b30-a714-6e8818a2278e",
-      "name": "Tele: Báo Cáo",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.1,
-      "position": [400, -100],
-      "credentials": {
-        "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
-          "name": "Telegram account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "6126814953",
-        "operation": "sendDocument",
-        "file": "pdfFile",
-        "additionalFields": {
-          "caption": "📄 Hợp đồng đã ký"
-        }
-      },
-      "id": "c639abd1-5ff6-420d-a400-04eaa2097d94",
-      "name": "Tele: PDF",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.1,
-      "position": [600, -200],
-      "credentials": {
-        "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
-          "name": "Telegram account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "6126814953",
-        "operation": "sendPhoto",
-        "file": "cccdTruoc",
-        "additionalFields": {
-          "caption": "📸 CCCD Mặt trước"
-        }
-      },
-      "id": "370befcd-4827-4a0e-98d1-c761317b6c1a",
-      "name": "Tele: CCCD 1",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.1,
-      "position": [800, -200],
-      "credentials": {
-        "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
-          "name": "Telegram account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "6126814953",
-        "operation": "sendPhoto",
-        "file": "cccdSau",
-        "additionalFields": {
-          "caption": "📸 CCCD Mặt sau"
-        }
-      },
-      "id": "9fb9b18e-3b53-4679-a48d-584415c3afef",
-      "name": "Tele: CCCD 2",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.1,
-      "position": [1000, -200],
-      "credentials": {
-        "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
-          "name": "Telegram account"
-        }
-      }
-    },
     {
       "parameters": {
         "sendTo": "={{ $json.email }}",
         "subject": "={{ '🔑 Bàn giao phòng ' + $json.phong + ' & Tài khoản hệ thống' }}",
         "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'><div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'><h2 style='color:white;margin:0'>🏠 Chúc mừng bạn đã nhận phòng!</h2></div><div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'><p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p><p>Phòng <b>{{ $json.phong }}</b> của bạn đã được bàn giao thành công. Chúc bạn có những trải nghiệm tuyệt vời tại đây.</p><div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0'><b style='color:#1e40af'>📋 Thông tin tiện ích</b><br><br>📶 Wifi: <b>CLM_Network_5G</b><br>🔓 Mật khẩu Wifi: <b>68686868</b><br>📝 Quý khách nhớ đọc kỹ Nội quy phòng trọ đính kèm trên Website để tránh bị phạt nhé!</div><div style='background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:16px;margin:16px 0'><b style='color:#854d0e'>🔑 Tài khoản đăng nhập App</b><br><br>🌐 Website: <a href='http://localhost:3000'>http://localhost:3000</a><br>📧 Email: <b>{{ $json.tenDangNhap }}</b><br>🔒 Mật khẩu: <code style='background:#fff;padding:2px 8px;border-radius:4px'>{{ $json.matKhau }}</code><br><small style='color:#dc2626'>⚠️ Vui lòng đổi mật khẩu ngay sau lần đăng nhập đầu tiên!</small></div><p style='color:#64748b;font-size:12px;margin-top:20px'>Trân trọng,<br><b>Ban Quản Lý CLM</b></p></div></div>",
-        "options": {}
+        "options": {
+          "appendAttachments": "pdfFile"
+        }
       },
-      "id": "4ebb8ce7-c1df-4022-970b-4dc779d2d83c",
+      "id": "8d4c37dc-7ad4-47ee-9ae4-abb063164146",
       "name": "Mail: Cấp Account",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [400, 100],
+      "position": [
+        -320,
+        992
+      ],
+      "webhookId": "a8f3143d-fdd5-4959-848d-5f51135ef65b",
       "credentials": {
         "gmailOAuth2": {
-          "id": "PDjIrqCaJnff5pye",
+          "id": "GDkRrIaMd4vssTbO",
           "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ban-giao-phong",
+        "options": {}
+      },
+      "id": "12eef7c2-0dff-41e8-83d4-2ad84815efc9",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        832
+      ],
+      "webhookId": "ef46ae75-e507-4e18-8358-e513520748c6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json.body || $input.item.json;\n\nfunction cleanB64(s) { \n  return (s && s.includes(',')) ? s.split(',')[1] : s; \n}\n\nconst binaryData = {};\n\nif (d.cccdTruoc) {\n  binaryData.cccdTruoc = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(d.cccdTruoc), 'base64'),\n    `CCCD_Truoc_P${d.phong}.jpg`,\n    'image/jpeg'\n  );\n}\n\nif (d.cccdSau) {\n  binaryData.cccdSau = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(d.cccdSau), 'base64'),\n    `CCCD_Sau_P${d.phong}.jpg`,\n    'image/jpeg'\n  );\n}\n\nif (d.pdfBase64) {\n  binaryData.pdfFile = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(d.pdfBase64), 'base64'),\n    `HopDong_P${d.phong}.pdf`,\n    'application/pdf'\n  );\n}\n\nreturn { json: d, binary: binaryData };"
+      },
+      "id": "56fb7efc-4e46-4885-8ed0-882b1182abda",
+      "name": "Xử lý Base64 sang File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=✅ BÀN GIAO PHÒNG MỚI:\n🏠 Phòng: {{ $json.phong }}\n👤 Khách: {{ $json.hoTen }}\n📞 SĐT: {{ $json.sdt }}\n🤖 Bot đang gửi hồ sơ đính kèm...",
+        "additionalFields": {}
+      },
+      "id": "4a653998-82f9-4eeb-b3aa-a8a7fc688bf7",
+      "name": "Tele: Báo cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        640
+      ],
+      "webhookId": "b41e53f9-b1fc-4b8d-8b87-a1e06f38e1be",
+      "credentials": {
+        "telegramApi": {
+          "id": "xJ5hM6BFpWwN99k8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "binaryPropertyName": "cccdTruoc",
+        "additionalFields": {}
+      },
+      "id": "ddacf549-97a9-432d-9184-4997399cb6f9",
+      "name": "Tele: CCCD Trước",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        736
+      ],
+      "webhookId": "75f0aec1-7e61-442d-9bfb-a586065c7035",
+      "credentials": {
+        "telegramApi": {
+          "id": "xJ5hM6BFpWwN99k8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "binaryPropertyName": "cccdSau",
+        "additionalFields": {}
+      },
+      "id": "9293bab4-9e25-478b-9a04-0781ea5350dd",
+      "name": "Tele: CCCD Sau",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        48,
+        832
+      ],
+      "webhookId": "30b08400-5fee-4a17-8b9a-84a60058f4cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "xJ5hM6BFpWwN99k8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "binaryPropertyName": "pdfFile",
+        "additionalFields": {}
+      },
+      "id": "ebad2251-4991-429c-a8b1-069868690c8a",
+      "name": "Tele: PDF Hợp Đồng",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        256,
+        928
+      ],
+      "webhookId": "4a120dbe-564a-43de-bb1c-57d78afe7dad",
+      "credentials": {
+        "telegramApi": {
+          "id": "xJ5hM6BFpWwN99k8",
+          "name": "Telegram account"
         }
       }
     }
   ],
+  "pinData": {},
   "connections": {
-    "Webhook Bàn Giao": {
+    "Webhook": {
       "main": [
         [
           {
-            "node": "Parse Base64 -> Binary",
+            "node": "Xử lý Base64 sang File",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse Base64 -> Binary": {
+    "Xử lý Base64 sang File": {
       "main": [
         [
           {
-            "node": "Tele: Báo Cáo",
+            "node": "Tele: Báo cáo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: CCCD Trước",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: CCCD Sau",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: PDF Hợp Đồng",
             "type": "main",
             "index": 0
           },
@@ -153,43 +193,18 @@
           }
         ]
       ]
-    },
-    "Tele: Báo Cáo": {
-      "main": [
-        [
-          {
-            "node": "Tele: PDF",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tele: PDF": {
-      "main": [
-        [
-          {
-            "node": "Tele: CCCD 1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tele: CCCD 1": {
-      "main": [
-        [
-          {
-            "node": "Tele: CCCD 2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
-  }
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "26bb6352-4c88-404f-b3fc-4682ee860831",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d92e635d9923c5e33aeed71b490c99116d0f169f30a0e3b5c6dbc179b7236fd2"
+  },
+  "id": "MgfEdycS5OgfQZn8",
+  "tags": []
 }
