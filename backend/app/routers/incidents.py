@@ -43,11 +43,14 @@ async def create_incident(
 
     if room:
         payload = {
-            "hoTen": tenant.ho_ten,
-            "phong": room.ma_phong,
-            "loaiSuCo": incident.loai_su_co,
-            "mucDoKhẩnCap": incident.muc_do_khan_cap,
-            "moTa": incident.mo_ta
+            "Họ và tên": tenant.ho_ten,
+            "Email": current_user.email,
+            "Mã phòng": room.ma_phong,
+            "Loại sự cố": incident.loai_su_co,
+            "Mức độ khẩn cấp": incident.muc_do_khan_cap,
+            "Mô tả chi tiết": incident.mo_ta,
+            "room_id": contract.room_id,  # Thêm room_id vào payload
+            "tenant_id": tenant.id       # Thêm tenant_id vào payload
         }
         async with httpx.AsyncClient() as client:
             try:
