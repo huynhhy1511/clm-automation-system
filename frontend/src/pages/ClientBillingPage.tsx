@@ -21,6 +21,8 @@ export function ClientBillingPage() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [paymentLinkLoading, setPaymentLinkLoading] = useState<number | null>(null);
+  const [generatedQR, setGeneratedQR] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBills = async () => {
@@ -83,8 +85,40 @@ export function ClientBillingPage() {
 
                 <div className="flex gap-3">
                   {isUnpaid && (
-                    <button onClick={() => setSelectedBill(bill)} className="flex-1 py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95">
-                      <Banknote size={20} /> Thanh toán ngay
+                    <button 
+                      onClick={async () => {
+                        try {
+                          setPaymentLinkLoading(bill.id);
+                          const res = await api.post(`/bills/${bill.id}/create-payment-link`);
+                          
+                          // Tuyệt đối không dùng window.location.href hay window.open()
+                          if (res.data && res.data.qrCode) {
+                            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(res.data.qrCode)}`;
+                            setGeneratedQR(qrUrl);
+                          } else {
+                            // Cố tình log lại nếu PayOS không sinh ra QR (Do thiếu key hoặc sai cấu hình)
+                            setGeneratedQR(null);
+                            console.warn("Lệnh đã được tạo nhưng Payload không chứa mã QR String", res.data);
+                          }
+                          
+                          // Mở popup
+                          setSelectedBill(bill);
+                        } catch (err) {
+                          console.error(err);
+                          alert("Lỗi kết nối PayOS, vui lòng thử lại.");
+                        } finally {
+                          setPaymentLinkLoading(null);
+                        }
+                      }} 
+                      disabled={paymentLinkLoading === bill.id}
+                      className={`flex-1 py-4 font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 ${paymentLinkLoading === bill.id ? 'bg-slate-700 text-slate-300 cursor-not-allowed shadow-none' : 'bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800'}`}
+                    >
+                      {paymentLinkLoading === bill.id ? (
+                        <div className="w-5 h-5 border-2 border-slate-400 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <Banknote size={20} />
+                      )}
+                      {paymentLinkLoading === bill.id ? "Đang xử lý..." : "Thanh toán ngay"}
                     </button>
                   )}
                   {bill.pdf_link && (
@@ -101,21 +135,23 @@ export function ClientBillingPage() {
 
       {selectedBill && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedBill(null)}></div>
+             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => { setSelectedBill(null); setGeneratedQR(null); }}></div>
              <div className="bg-white rounded-[2.5rem] w-full max-w-sm relative z-10 shadow-2xl p-8 overflow-hidden">
-                 <button onClick={() => setSelectedBill(null)} className="absolute top-6 right-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200">
+                 <button onClick={() => { setSelectedBill(null); setGeneratedQR(null); }} className="absolute top-6 right-6 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200">
                     <X size={20} />
                  </button>
 
                  <h3 className="text-2xl font-black text-slate-900 mb-8 text-center pt-2">Mã VietQR</h3>
                  
                  <div className="mb-8 flex justify-center scale-110">
-                    {selectedBill.qr_url ? (
+                    {generatedQR ? (
+                      <img src={generatedQR} alt="VietQR" className="rounded-2xl border-4 border-slate-50" />
+                    ) : selectedBill.qr_url ? (
                       <img src={selectedBill.qr_url} alt="VietQR" className="rounded-2xl border-4 border-slate-50" />
                     ) : (
                       <div className="w-64 h-64 bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200">
                          <AlertTriangle size={32} className="mb-2" />
-                         <span className="text-xs font-bold text-center px-4">Đang khởi tạo mã QR từ máy chủ ngân hàng...</span>
+                         <span className="text-xs font-bold text-center px-4">Lỗi kết nối: Không thể tạo QR</span>
                       </div>
                     )}
                  </div>
