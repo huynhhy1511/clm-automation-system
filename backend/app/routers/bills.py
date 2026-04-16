@@ -211,3 +211,69 @@ async def save_invoice(
     
     await db.commit()
     return {"message": "Hóa đơn đã được lưu thành công", "pdf_link": bill.pdf_link}
+
+@router.post("/{bill_id}/create-payment-link")
+async def create_payment_link(
+    bill_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    bill_res = await db.execute(select(models.UtilityBill).where(models.UtilityBill.id == bill_id))
+    bill = bill_res.scalar_one_or_none()
+    if not bill:
+        raise HTTPException(status_code=404, detail="Hóa đơn không tồn tại")
+    
+    room_res = await db.execute(select(models.Room).where(models.Room.id == bill.room_id))
+    room = room_res.scalar_one_or_none()
+    room_name = room.ma_phong if room else f"Bill {bill.id}"
+
+    import time
+    if not bill.payos_order_code:
+        bill.payos_order_code = int(str(bill.id) + str(int(time.time() * 1000))[-6:])
+        await db.commit()
+
+    from payos.types import CreatePaymentLinkRequest
+    from app.core.config import settings
+    from app.core.payos_provider import payos
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+
+    payment_data = CreatePaymentLinkRequest(
+        orderCode=bill.payos_order_code,
+        amount=int(bill.tong_tien),
+        description=f"{room_name}",
+        cancelUrl=settings.PAYOS_CANCEL_URL,
+        returnUrl=settings.PAYOS_RETURN_URL
+    )
+
+    try:
+        if payos:
+            try:
+                payment_response = await payos.payment_requests.create(payment_data)
+            except Exception as e_create:
+                if "tồn tại" in str(e_create).lower() or "exist" in str(e_create).lower():
+                    # Generate a new order code and retry
+                    bill.payos_order_code = int(str(bill.id) + str(int(time.time() * 1000))[-7:])
+                    payment_data_new = CreatePaymentLinkRequest(
+                        orderCode=bill.payos_order_code,
+                        amount=int(bill.tong_tien),
+                        description=f"{room_name}",
+                        cancelUrl=settings.PAYOS_CANCEL_URL,
+                        returnUrl=settings.PAYOS_RETURN_URL
+                    )
+                    payment_response = await payos.payment_requests.create(payment_data_new)
+                    await db.commit()
+                else:
+                    raise e_create
+                    
+            checkout_url = getattr(payment_response, 'checkout_url', getattr(payment_response, 'checkoutUrl', ''))
+            qr_code_str = getattr(payment_response, 'qr_code', getattr(payment_response, 'qrCode', ''))
+        else:
+            logger.warning("PAYOS SKIPPED: Provider not initialized (missing keys).")
+            checkout_url = f"https://payos.vn/error-placeholder-{bill.payos_order_code}"
+            qr_code_str = ""
+            
+        return {"checkoutUrl": checkout_url, "qrCode": qr_code_str}
+    except Exception as e:
+        logger.error(f"PAYOS BILL ERROR: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Không thể tạo link thanh toán: {str(e)}")

@@ -88,6 +88,7 @@ class UtilityBill(Base):
     anh_bill = Column(Text, nullable=True) # UNC thanh toán từ tenant
     pdf_link = Column(String(255), nullable=True)
     qr_url = Column(Text, nullable=True)
+    payos_order_code = Column(BigInteger, unique=True, nullable=True)
     
     room = relationship("Room", back_populates="bills")
 

@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    DATABASE_URL: str = "postgresql+asyncpg://admin:adminpassword@postgres:5432/clm_system_db"
     SECRET_KEY: str = "SUPER_SECRET_KEY_FOR_DEMO_CHANGE_IN_PROD"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
