@@ -65,7 +65,61 @@ async def payos_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                 else:
                     logger.error(f"Handover failed for contract {contract.id}")
             else:
-                logger.warning(f"No contract found with payos_order_code: {numeric_order_code}")
+                # TÌM TRONG HÓA ĐƠN
+                bill_res = await db.execute(
+                    select(models.UtilityBill).where(models.UtilityBill.payos_order_code == numeric_order_code)
+                )
+                bill = bill_res.scalar_one_or_none()
+                if bill:
+                    if bill.trang_thai == "Đã thanh toán":
+                        return {"status": "success", "message": "Bill already paid"}
+                    bill.trang_thai = "Đã thanh toán"
+                    await db.commit()
+                    
+                    # Gọi webhook n8n
+                    import httpx
+                    try:
+                        room_res = await db.execute(select(models.Room).where(models.Room.id == bill.room_id))
+                        room = room_res.scalar_one_or_none()
+                        
+                        contract_res = await db.execute(select(models.Contract).where(models.Contract.room_id == bill.room_id).where(models.Contract.trang_thai == "Hiệu lực"))
+                        current_contract = contract_res.scalars().first()
+                        
+                        tenant_name = "Khách Hàng"
+                        user_email = ""
+                        if current_contract:
+                            tenant_res = await db.execute(select(models.Tenant).where(models.Tenant.id == current_contract.tenant_id))
+                            tenant = tenant_res.scalar_one_or_none()
+                            if tenant:
+                                tenant_name = tenant.ho_ten
+                                user_res = await db.execute(select(models.User).where(models.User.id == tenant.user_id))
+                                usr = user_res.scalar_one_or_none()
+                                if usr:
+                                    user_email = usr.email
+                        
+                        thang = bill.thang_nam.split('/')[0] if '/' in bill.thang_nam else bill.thang_nam
+                        nam = bill.thang_nam.split('/')[1] if '/' in bill.thang_nam else "2026"
+                        
+                        payload = {
+                            "phong": room.ma_phong if room else "",
+                            "thang": thang,
+                            "nam": nam,
+                            "hoTen": tenant_name,
+                            "email": user_email,
+                            "tienDienFormatted": f"{bill.chi_so_dien_moi - bill.chi_so_dien_cu:,.0f} kWh",
+                            "tienNuocFormatted": f"{bill.chi_so_nuoc_moi - bill.chi_so_nuoc_cu:,.0f} m3/ng",
+                            "tienDichVuFormatted": "Thu chung",
+                            "tienPhongFormatted": "Thu chung",
+                            "tongTienFormatted": f"{bill.tong_tien:,.0f}".replace(",", ".")
+                        }
+                        async with httpx.AsyncClient() as client:
+                            await client.post("http://n8n:5678/webhook/xac-nhan-hoa-don", json=payload, timeout=10.0)
+                    except Exception as e:
+                        logger.error(f"Failed to call n8n webhook: {e}")
+                    
+                    return {"status": "success", "message": "Bill marked as paid and webhook triggered"}
+                    
+                logger.warning(f"No contract or bill found with payos_order_code: {numeric_order_code}")
         
         return {"status": "success", "message": "Webhook processed"}
         
