@@ -3,26 +3,27 @@
   "nodes": [
     {
       "parameters": {
-        "sendTo": "={{ $json.email }}",
-        "subject": "=Hóa đơn tiền nhà P.{{ $json.phong }} - Tháng {{ new Date().getMonth() + 1 }}",
-        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN TIỀN NHÀ P.{{ $json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ này, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> Tháng sau (trả trước)</li>\n      <li><b>Điện & Nước:</b> Chỉ số tháng vừa qua (trả sau)</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $json.val_tong }} đ</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số điện nước và các khoản phí dịch vụ, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>",
+        "sendTo": "={{ $('2. Tính Toán & VietQR').item.json.email }}",
+        "subject": "=Hóa đơn tiền nhà P.{{ $('2. Tính Toán & VietQR').item.json.phong }} - Tháng {{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}",
+        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN TIỀN NHÀ P.{{ $('2. Tính Toán & VietQR').item.json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $('2. Tính Toán & VietQR').item.json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ <strong>{{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}</strong>, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_phong }} (Tháng sau)</li>\n      <li><b>Điện & Nước:</b> {{ $('2. Tính Toán & VietQR').item.json.is_auto ? \"Phí cố định hàng tháng\" : \"Tính theo chỉ số tiêu thu\" }}</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $('2. Tính Toán & VietQR').item.json.txt_tong }}</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số điện nước và các khoản phí dịch vụ, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>",
         "options": {
           "attachmentsUi": {
             "attachmentsBinary": [
-              {}
+              {
+                "property": "data"
+              }
             ]
           }
         }
       },
-      "id": "a474d497-5779-4f44-88a3-bbe31fe69589",
+      "id": "f4653138-438e-4040-a600-671cc6e2bd05",
       "name": "Gửi Mail Hóa Đơn",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        816,
-        1456
+        1120,
+        1460
       ],
-      "webhookId": "15a0314b-bcfa-40b4-96c2-f2ffea76da59",
       "credentials": {
         "gmailOAuth2": {
           "id": "GDkRrIaMd4vssTbO",
@@ -41,53 +42,86 @@
           ]
         }
       },
-      "id": "252c2082-a803-42ae-9c9d-7a720011c2c8",
+      "id": "f599de14-0fc6-4df5-895e-5205b44e701a",
       "name": "Lịch ngày 25",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        -528,
-        1360
+        -700,
+        1380
       ]
     },
     {
       "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    r.id AS room_id,\n    r.ma_phong AS phong,\n    c.gia_thue_chot AS tienPhong,\n    t.ho_ten,\n    t.email,\n    (SELECT chi_so_dien_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1) AS chiSoDienCu,\n    (SELECT chi_so_nuoc_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1) AS chiSoNuocCu\nFROM rooms r\nJOIN contracts c ON r.id = c.room_id\nJOIN tenants t ON c.tenant_id = t.id\nWHERE c.trang_thai = 'Hiệu lực'\nAND NOT EXISTS (\n    SELECT 1 FROM utility_bills \n    WHERE room_id = r.id \n    AND (thang_nam ILIKE '%' || TO_CHAR(CURRENT_DATE + INTERVAL '1 month', 'MM, YYYY') || '%'\n         OR thang_nam ILIKE '%' || TO_CHAR(CURRENT_DATE + INTERVAL '1 month', 'MM/YYYY') || '%')\n);",
         "options": {}
       },
-      "id": "3d0fcd8e-cc86-4810-bc94-d92a71de916a",
-      "name": "1. Cài đặt Đơn giá",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
+      "id": "444c1fac-1ced-4612-888e-4a152bb28142",
+      "name": "Lấy DS Phòng Đang Thuê",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
-        -288,
-        1264
+        -480,
+        1380
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "riWAm7ixYWerH0ry",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "is_auto",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {
+          "includeOtherFields": true
+        }
+      },
+      "id": "854c5d66-d314-4add-9a62-8eb90bdac1a8",
+      "name": "Auto: Set Flag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -260,
+        1380
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// 1. Hàm lấy dữ liệu cực mạnh (Tìm mọi ngõ ngách)\nconst getInput = () => {\n  const raw = $input.item.json;\n  return raw.body?.body || raw.body || raw;\n};\n\n// 2. Lấy cấu hình giá (Đảm bảo lấy đúng từ node Cài đặt)\nconst getConfig = () => {\n  try {\n    return $node[\"1. Cài đặt Đơn giá\"].json;\n  } catch (e) {\n    return { gia_dien: 1000, gia_nuoc_khoan: 0, phi_dv: 0 };\n  }\n};\n\nconst d = getInput();\nconst config = getConfig();\n\n// 3. Ép kiểu về số (Number) để tránh lỗi NaN\nconst dienCu = Number(d.chiSoDienCu || 0);\nconst dienMoi = Number(d.chiSoDienMoi || 0);\nconst nuocCu = Number(d.chiSoNuocCu || 0);\nconst nuocMoi = Number(d.chiSoNuocMoi || 0);\nconst giaDien = Number(config.gia_dien || 1000);\nconst giaNuoc = 1000;\nconst tienPhong = Number(d.tienPhong || d.tongTien || 0);\nconst phiDV = Number(config.phi_dv || 0);\n\n// 4. Tính toán chi tiết\nconst val_dien = (dienMoi - dienCu) * giaDien;\nconst val_nuoc = (nuocMoi - nuocCu) * giaNuoc;\nconst val_tong = tienPhong + val_dien + val_nuoc + phiDV;\n\n// 5. Định dạng tiền tệ VNĐ\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\n// 6. Trả về kết quả (Full Option)\nreturn {\n  json: {\n    ...d,\n    // Số thô để lưu Database (Node 6)\n    val_dien,\n    val_nuoc,\n    val_tong,\n    val_phong: tienPhong,\n    // Link QR\n    qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${val_tong}&addInfo=ThanhToan_P${d.phong}&accountName=HUYNH%20NGOC%20HUY`,\n    // Chữ để hiện lên PDF (Node 3)\n    txt_phong: fmt(tienPhong),\n    txt_dien: fmt(val_dien),\n    txt_nuoc_dv: fmt(val_nuoc),\n    txt_tong: fmt(val_tong),\n    dien_tieu_thu: dienMoi - dienCu\n  }\n};"
+        "jsCode": "/**\n * CODE NODE: TÍNH TOÁN (PHIÊN BẢN TRUY XUẤT TRỰC TIẾP - SIÊU ỔN ĐỊNH)\n */\nconst input = $input.item.json;\nconst isAuto = input.is_auto === true;\n\n// Lấy dữ liệu dự phòng trực tiếp từ các node nguồn để tránh node trung gian làm mất dữ liệu\nlet sourceData = {};\ntry {\n    if (isAuto) {\n        sourceData = $(\"Lấy DS Phòng Đang Thuê\").item.json;\n    } else {\n        sourceData = $(\"Webhook (Chốt tay)1\").item.json;\n    }\n} catch (e) {\n    sourceData = {};\n}\n\nfunction getV(key) {\n    let b = input.body || sourceData.body;\n    if (typeof b === 'string') {\n        try { b = JSON.parse(b); } catch (e) { b = null; }\n    }\n\n    const targets = [\n        input,           // Ưu tiên 1: Node hiện tại\n        sourceData,      // Ưu tiên 2: Node nguồn (Gốc)\n        b,               // Ưu tiên 3: Body của node hiện tại/nguồn\n        sourceData.body, \n        b?.body,\n        input.query,\n        input.params\n    ];\n    \n    for (const t of targets) {\n        if (t && t[key] !== undefined && t[key] !== null) return t[key];\n    }\n    return null;\n}\n\n// Trích xuất các trường quan trọng\nconst phong = getV('phong') || getV('ma_phong') || \"?\";\nconst hoTen = getV('hoTen') || getV('ho_ten') || \"Khách hàng\";\nconst email = getV('email') || \"clm@example.com\";\nconst thangNam = getV('thangNam') || getV('thang_nam') || \"tháng sau\";\n\nlet baseRent = 0;\nlet tongTuReact = Number(getV('tongTien') || getV('tong_tien') || 0);\nlet rentTuPostgres = Number(getV('tienPhong') || getV('tien_phong') || 0);\n\nif (isAuto) {\n    baseRent = rentTuPostgres;\n} else {\n    baseRent = tongTuReact;\n}\n\nlet val_dien, val_nuoc;\nif (isAuto) {\n    val_dien = 1000;\n    val_nuoc = 1000;\n} else {\n    const sd = Number(getV('chiSoDienMoi') || 0) - Number(getV('chiSoDienCu') || 0);\n    const sn = Number(getV('chiSoNuocMoi') || 0) - Number(getV('chiSoNuocCu') || 0);\n    val_dien = Math.max(0, sd * 1000);\n    val_nuoc = Math.max(0, sn * 1000);\n}\n\nconst finalTotal = (!isAuto && tongTuReact > 0) ? tongTuReact : (baseRent + val_dien + val_nuoc);\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\nreturn {\n    json: {\n        phong, hoTen, email,\n        is_auto: isAuto,\n        val_phong: isAuto ? baseRent : (finalTotal - val_dien - val_nuoc),\n        val_tong: finalTotal,\n        txt_phong: fmt(isAuto ? baseRent : (finalTotal - val_dien - val_nuoc)),\n        txt_tong: fmt(finalTotal),\n        thangDisplay: thangNam,\n        qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${finalTotal}&addInfo=ThanhToan_P${phong}&accountName=HUYNH%20NGOC%20HUY`,\n        chi_so_dien_cu: Number(getV('chiSoDienCu') || getV('chi_so_dien_cu') || 0),\n        chi_so_dien_moi: Number(getV('chiSoDienMoi') || getV('chi_so_dien_moi') || 0),\n        chi_so_nuoc_cu: Number(getV('chiSoNuocCu') || getV('chi_so_nuoc_cu') || 0),\n        chi_so_nuoc_moi: Number(getV('chiSoNuocMoi') || getV('chi_so_nuoc_moi') || 0)\n    }\n};"
       },
-      "id": "9263117f-fa6c-44d5-87eb-865788499c60",
+      "id": "32301df4-0eee-442a-97d0-f317bc507d74",
       "name": "2. Tính Toán & VietQR",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -32,
-        1264
+        20,
+        1260
       ]
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.item.json;\nconst today = new Date();\n\nconst html = `\n<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  body { font-family: \"Arial\", sans-serif; line-height: 1.6; color: #333; }\n  .header { border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }\n  table { width: 100%; border-collapse: collapse; margin: 20px 0; }\n  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }\n  th { background-color: #f8fafc; color: #1e40af; }\n  .total-row { font-size: 20px; font-weight: bold; color: #dc2626; text-align: right; margin-top: 20px; }\n</style>\n</head>\n<body>\n  <div class=\"header\">\n    <p style=\"float: right;\">Ngày lập: ${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}</p>\n    <h2 style=\"color: #1e40af; margin: 0;\">HÓA ĐƠN TIỀN NHÀ - P.${d.phong}</h2>\n  </div>\n\n  <p><b>Khách hàng:</b> ${d.hoTen || 'Quý khách'}</p>\n\n  <table style=\"width:100%; border-collapse: collapse;\">\n  <thead>\n    <tr style=\"background-color: #f1f5f9;\">\n      <th style=\"padding:10px; border:1px solid #ddd;\">Hạng mục</th>\n      <th style=\"padding:10px; border:1px solid #ddd;\">Chỉ số / Số lượng</th>\n      <th style=\"padding:10px; border:1px solid #ddd;\">Thành tiền</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td style=\"padding:10px; border:1px solid #ddd;\">Tiền phòng</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:center;\">1 tháng</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:right;\"><b>${d.txt_phong}</b></td>\n    </tr>\n    <tr>\n      <td style=\"padding:10px; border:1px solid #ddd;\">Tiền điện</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:center;\">${d.chiSoDienCu} ➔ ${d.chiSoDienMoi}</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:right;\"><b>${d.txt_dien}</b></td>\n    </tr>\n    <tr>\n      <td style=\"padding:10px; border:1px solid #ddd;\">Nước & Dịch vụ</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:center;\">Khoán</td>\n      <td style=\"padding:10px; border:1px solid #ddd; text-align:right;\"><b>${d.txt_nuoc_dv}</b></td>\n    </tr>\n  </tbody>\n</table>\n\n<div style=\"text-align:right; margin-top:20px; font-size:20px;\">\n  <span style=\"color:#64748b;\">TỔNG THANH TOÁN:</span> <b style=\"color:#dc2626;\">${d.txt_tong}</b>\n</div>\n\n  <div style=\"text-align: center; margin-top: 30px;\">\n    <p><i>Vui lòng quét mã QR bên dưới để thanh toán</i></p>\n    <img src=\"${d.qrUrl}\" width=\"220\" style=\"border: 1px solid #ddd; padding: 10px; border-radius: 8px;\">\n  </div>\n</body>\n</html>\n`;\n\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
+        "jsCode": "const d = $json;\nconst html = `<html><body><h2>Hóa đơn P.${d.phong}</h2><p>Tổng: ${d.txt_tong}</p></body></html>`;\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
       },
-      "id": "5962396f-369d-4858-9a12-33dd8892f718",
+      "id": "9ad2ec8b-9ac3-46ca-a0c1-6c9db0d50be8",
       "name": "3. Dàn trang HTML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        1264
+        210,
+        1260
       ]
     },
     {
@@ -107,27 +141,42 @@
         },
         "options": {}
       },
-      "id": "b20af2d2-1e0f-41d0-b55b-6a65249c45fe",
+      "id": "bc312b86-1cb6-49b5-a275-4068ebe5e8b1",
       "name": "4. Gotenberg (PDF)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        368,
-        1264
+        430,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "ef1d2345-6789-abcd-efgh-1234567890cd",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        620,
+        1380
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst info = $node[\"2. Tính Toán & VietQR\"].json;\n\nreturn {\n  json: { ...info, pdfBase64 },\n  binary: { data: await this.helpers.prepareBinaryData(fileBuffer, `HoaDon_P${info.phong}.pdf`, 'application/pdf') }\n};"
+        "jsCode": "/**\n * NODE 5: ĐÓNG GÓI PDF\n */\nconst fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst info = $('2. Tính Toán & VietQR').item.json;\n\nreturn {\n  json: { ...info, pdfBase64 },\n  binary: {\n    data: await this.helpers.prepareBinaryData(fileBuffer, `HoaDon_P${info.phong}.pdf`, 'application/pdf')\n  }\n};"
       },
-      "id": "1ef57f0e-ecd0-414c-ab9b-4cb2798c92e1",
+      "id": "499f97ed-f891-40cd-a918-e4a19db0c692",
       "name": "5. Đóng gói PDF & Base64",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        560,
-        1264
+        820,
+        1380
       ]
     },
     {
@@ -139,11 +188,11 @@
           "parameters": [
             {
               "name": "phong",
-              "value": "={{ $json.phong }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.phong }}"
             },
             {
               "name": "tong_tien",
-              "value": "={{ $json.val_tong }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.val_tong }}"
             },
             {
               "name": "pdf_base64",
@@ -151,43 +200,39 @@
             },
             {
               "name": "qr_url",
-              "value": "={{ $json.qrUrl }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.qrUrl }}"
             },
             {
               "name": "thang_nam",
-              "value": "={{ $json.thangNam }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}"
             },
             {
               "name": "chi_so_dien_moi",
-              "value": "={{ $json.chiSoDienMoi }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_moi }}"
             },
             {
               "name": "chi_so_dien_cu",
-              "value": "={{ $json.chiSoDienCu }}"
-            },
-            {
-              "name": "thang_nam",
-              "value": "={{ $json.thangNam }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_cu }}"
             },
             {
               "name": "chi_so_nuoc_cu",
-              "value": "={{ $json.chiSoNuocCu }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_cu }}"
             },
             {
               "name": "chi_so_nuoc_moi",
-              "value": "={{ $json.chiSoNuocMoi }}"
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_moi }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "72374ff8-bd5d-43b3-a5a0-5fa129300635",
+      "id": "302caa63-4d26-4f77-ad8f-cd84728abfe2",
       "name": "6. Lưu Database",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        816,
-        1264
+        1120,
+        1300
       ]
     },
     {
@@ -196,18 +241,17 @@
         "chatId": "6126814953",
         "binaryData": true,
         "additionalFields": {
-          "caption": "=🚀 [BÁO CÁO HÓA ĐƠN] 🏠 Phòng: {{ $json.phong }} 👤 Khách hàng: {{ $json.hoTen }} 💸 Tổng thanh toán: {{ $json.tong_cong_fmt }} đ  ✅ Trạng thái: - Đã gửi Email hóa đơn cho khách. - Đã lưu thông tin & Base64 vào Database. - QR thanh toán: {{ $json.qrUrl }}"
+          "caption": "=🚀 [BÁO CÁO HÓA ĐƠN]\n🏠 Phòng: {{ $('2. Tính Toán & VietQR').item.json.phong }}\n💸 Tổng: {{ $('2. Tính Toán & VietQR').item.json.txt_tong }}\n✅ Trạng thái: Đã gửi Email & Lưu DB."
         }
       },
-      "id": "ee7d5f8c-e543-44e6-b0d3-8ef89f88ec18",
+      "id": "d7c0fce1-36ed-4533-a165-d503f120fe92",
       "name": "7. Tele: Báo cáo",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
       "position": [
-        816,
-        1104
+        1120,
+        1150
       ],
-      "webhookId": "d7a184a3-7d70-418f-bfbb-c6d2861f76a4",
       "credentials": {
         "telegramApi": {
           "id": "xJ5hM6BFpWwN99k8",
@@ -221,15 +265,40 @@
         "path": "chot-dien-nuoc",
         "options": {}
       },
-      "id": "067374eb-297a-481f-855c-ca347f580558",
+      "id": "0546e4b4-5f6b-4e25-afee-33b4bed984a2",
       "name": "Webhook (Chốt tay)1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -528,
-        1168
+        -700,
+        1170
       ],
       "webhookId": "33b34c2a-6f84-4498-b83f-a215166d7794"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "is_auto",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {
+          "includeOtherFields": true
+        }
+      },
+      "id": "2fbba8af-f4e0-4568-bf1e-d7012c297e8d",
+      "name": "Manual: Set Flag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -260,
+        1170
+      ]
     }
   ],
   "pinData": {},
@@ -238,14 +307,36 @@
       "main": [
         [
           {
-            "node": "1. Cài đặt Đơn giá",
+            "node": "Lấy DS Phòng Đang Thuê",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "1. Cài đặt Đơn giá": {
+    "Lấy DS Phòng Đang Thuê": {
+      "main": [
+        [
+          {
+            "node": "Auto: Set Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto: Set Flag": {
+      "main": [
+        [
+          {
+            "node": "2. Tính Toán & VietQR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual: Set Flag": {
       "main": [
         [
           {
@@ -261,6 +352,11 @@
         [
           {
             "node": "3. Dàn trang HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Data",
             "type": "main",
             "index": 0
           }
@@ -279,6 +375,17 @@
       ]
     },
     "4. Gotenberg (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
       "main": [
         [
           {
@@ -314,7 +421,7 @@
       "main": [
         [
           {
-            "node": "1. Cài đặt Đơn giá",
+            "node": "Manual: Set Flag",
             "type": "main",
             "index": 0
           }
@@ -322,17 +429,8 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
-  },
-  "versionId": "c76dd2bb-d9a5-4a7a-88cc-ea1fcfd4f0e4",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "d92e635d9923c5e33aeed71b490c99116d0f169f30a0e3b5c6dbc179b7236fd2"
-  },
-  "id": "8gY1u4LUK6tzD7uIWLxkU",
-  "tags": []
+    "binaryMode": "separate"
+  }
 }

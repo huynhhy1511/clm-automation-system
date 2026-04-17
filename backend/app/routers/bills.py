@@ -150,6 +150,10 @@ async def get_active_rooms(
     
     return active_rooms
 
+import logging
+
+logger = logging.getLogger("uvicorn.error")
+
 @router.post("/save")
 async def save_invoice(
     payload: schemas.InvoiceSaveRequest,
@@ -159,6 +163,8 @@ async def save_invoice(
     Endpoint gọi bởi n8n sau khi tạo PDF.
     Tìm/Tạo Bill -> Giải mã Base64 -> Lưu file .pdf vật lý -> Cập nhật URL.
     """
+    logger.info(f"N8N PAYLOAD RECEIVED: {payload.model_dump_json(indent=2)}")
+    
     # 1. Tìm Room_id từ ma_phong (Khớp với trường 'phong' trong n8n)
     room_res = await db.execute(select(models.Room).where(models.Room.ma_phong == payload.phong))
     room = room_res.scalar_one_or_none()
