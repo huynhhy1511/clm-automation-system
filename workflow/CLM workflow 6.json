@@ -1,5 +1,4 @@
 {
-  "name": "CLM workflow 6",
   "nodes": [
     {
       "parameters": {
@@ -51,13 +50,13 @@
         },
         "options": {}
       },
-      "id": "99334387-d0b0-4cc8-be22-ad7ddecd793c",
-      "name": "Chuẩn bị dữ liệu sự cố",
+      "id": "15b68274-4de4-4bbd-8609-9fbdfdffde10",
+      "name": "Chuẩn bị dữ liệu sự cố1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -720,
-        192
+        560,
+        1328
       ]
     },
     {
@@ -84,33 +83,33 @@
         },
         "options": {}
       },
-      "id": "551dfa65-09fd-411b-825a-321b2e1a2c87",
-      "name": "Kiểm tra mức độ khẩn cấp",
+      "id": "b9747b9f-4273-40b2-b95b-be628f676b64",
+      "name": "Kiểm tra mức độ khẩn cấp1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -320,
-        192
+        816,
+        1328
       ]
     },
     {
       "parameters": {
-        "chatId": "6126814953",
-        "text": "=🚨 SỰ CỐ KHẨN CẤP!\n\nPhòng: {{ $json.maPhong }}\nKhách: {{ $json.tenKhach }}\nEmail khách hàng: {{ $json.email }}\nLoại sự cố: {{ $json.loaiSuCo }}\nMô tả: {{ $json.moTa }}\nThời gian: {{ $json.ngayBaoCao }}\n\n\nVui lòng xử lý ngay!",
+        "chatId": "-1003790123986",
+        "text": "=🚨 SỰ CỐ KHẨN CẤP!\n\nPhòng: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.maPhong }}\nKhách: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.tenKhach }}\nEmail khách hàng: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.email }}\nLoại sự cố: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.loaiSuCo }}\nMô tả: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.moTa }}\nThời gian: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.ngayBaoCao }}\n\n\nVui lòng xử lý ngay!",
         "additionalFields": {}
       },
-      "id": "fc2ee4ee-39c7-45d0-9a5a-18c5bf447234",
-      "name": "Thông báo Telegram khẩn cấp",
+      "id": "03d7880c-229c-4601-9773-e1f449ed7682",
+      "name": "Thông báo Telegram khẩn cấp1",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        208,
-        0
+        1344,
+        1152
       ],
       "webhookId": "450a4620-13c5-45f2-a5ff-ab6b86dbedba",
       "credentials": {
         "telegramApi": {
-          "id": "rW3TljNKkhtPAJQS",
+          "id": "8OipU1vjlzGynpLq",
           "name": "Telegram account"
         }
       }
@@ -122,18 +121,18 @@
         "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #d32f2f;\">🚨 Sự cố khẩn cấp đã được ghi nhận</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố <strong>KHẨN CẤP</strong> từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #ffebee; padding: 15px; border-left: 4px solid #d32f2f; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p style=\"color: #d32f2f; font-weight: bold;\">⚡ Thợ sửa chữa sẽ đến trong vòng 2-4 giờ tới.</p>\n  <p>Xin cảm ơn sự thông báo kịp thời của bạn!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
         "options": {}
       },
-      "id": "7d3820d1-b9db-45e5-bfe9-a71a7021cb48",
-      "name": "Email phản hồi khách hàng",
+      "id": "bc05e176-9423-414b-9264-44eeae2de33b",
+      "name": "Email phản hồi khách hàng1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        1136,
+        1152
       ],
       "webhookId": "ce3cfbba-a3a5-4c7b-b6a6-00d60fcc7057",
       "credentials": {
         "gmailOAuth2": {
-          "id": "PDjIrqCaJnff5pye",
+          "id": "X3bziJl7KZC9P83p",
           "name": "Gmail account"
         }
       }
@@ -145,18 +144,18 @@
         "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #1976d2;\">✅ Đã ghi nhận sự cố</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #e3f2fd; padding: 15px; border-left: 4px solid #1976d2; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p>🔧 Thợ sửa chữa sẽ liên hệ và đến trong vòng <strong>24 giờ tới</strong>.</p>\n  <p>Cảm ơn bạn đã thông báo!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
         "options": {}
       },
-      "id": "3429aa82-850f-484a-894d-7438a818e618",
-      "name": "Email phản hồi bình thường",
+      "id": "b4340773-f644-437f-bb0b-8571cb60c711",
+      "name": "Email phản hồi bình thường1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        0,
-        368
+        1136,
+        1520
       ],
       "webhookId": "1f04fb70-2d7f-424f-aef3-7e034886ee7b",
       "credentials": {
         "gmailOAuth2": {
-          "id": "PDjIrqCaJnff5pye",
+          "id": "X3bziJl7KZC9P83p",
           "name": "Gmail account"
         }
       }
@@ -168,25 +167,25 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "5891efbd-4a3e-49eb-8e01-ffcbfadda6bc",
-      "name": "Nhận báo cáo từ React",
+      "id": "775efc2b-b52c-4371-a041-5bf3762e8e86",
+      "name": "Nhận báo cáo từ React1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -912,
-        192
+        304,
+        1328
       ],
       "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
     },
     {
       "parameters": {},
-      "id": "4c09eb8a-dfe1-4e72-8943-904eacb4e508",
-      "name": "Gộp kết quả email",
+      "id": "c09b8c43-7255-4f5e-b10d-afb7307090b4",
+      "name": "Gộp kết quả email1",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        416,
-        208
+        1552,
+        1360
       ]
     },
     {
@@ -195,96 +194,95 @@
         "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã ghi nhận sự cố thành công\"\n}",
         "options": {}
       },
-      "id": "85e5fb1f-e45b-444e-978b-b96d40569d78",
-      "name": "Trả response về React",
+      "id": "7fdcd1f0-b767-4411-92dc-bcc741351c00",
+      "name": "Trả response về React1",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        752,
-        208
+        1888,
+        1360
       ]
     }
   ],
-  "pinData": {},
   "connections": {
-    "Chuẩn bị dữ liệu sự cố": {
+    "Chuẩn bị dữ liệu sự cố1": {
       "main": [
         [
           {
-            "node": "Kiểm tra mức độ khẩn cấp",
+            "node": "Kiểm tra mức độ khẩn cấp1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Kiểm tra mức độ khẩn cấp": {
+    "Kiểm tra mức độ khẩn cấp1": {
       "main": [
         [
           {
-            "node": "Email phản hồi khách hàng",
+            "node": "Email phản hồi khách hàng1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Email phản hồi bình thường",
+            "node": "Email phản hồi bình thường1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Thông báo Telegram khẩn cấp": {
+    "Thông báo Telegram khẩn cấp1": {
       "main": [
         [
           {
-            "node": "Gộp kết quả email",
+            "node": "Gộp kết quả email1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Email phản hồi khách hàng": {
+    "Email phản hồi khách hàng1": {
       "main": [
         [
           {
-            "node": "Thông báo Telegram khẩn cấp",
+            "node": "Thông báo Telegram khẩn cấp1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Email phản hồi bình thường": {
+    "Email phản hồi bình thường1": {
       "main": [
         [
           {
-            "node": "Gộp kết quả email",
+            "node": "Gộp kết quả email1",
             "type": "main",
             "index": 1
           }
         ]
       ]
     },
-    "Nhận báo cáo từ React": {
+    "Nhận báo cáo từ React1": {
       "main": [
         [
           {
-            "node": "Chuẩn bị dữ liệu sự cố",
+            "node": "Chuẩn bị dữ liệu sự cố1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Gộp kết quả email": {
+    "Gộp kết quả email1": {
       "main": [
         [
           {
-            "node": "Trả response về React",
+            "node": "Trả response về React1",
             "type": "main",
             "index": 0
           }
@@ -292,17 +290,9 @@
       ]
     }
   },
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
-  },
-  "versionId": "c58abacf-f4f6-45c7-ab7c-94c5c6f78852",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
-  },
-  "id": "bqoPSDzDBLokBdvewlp_d",
-  "tags": []
+    "instanceId": "a3faff9b6196ac5332ee2c10061db08c7e0d6e3ba4c279045337ec16c595ccfa"
+  }
 }
