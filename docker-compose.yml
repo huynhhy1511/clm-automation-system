@@ -74,8 +74,6 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     environment:
-      - N8N_HOST=ezliving.id.vn
-      - N8N_PORT=5678
       - N8N_PROTOCOL=https
       - NODE_ENV=production
       - N8N_PATH=/n8n/
