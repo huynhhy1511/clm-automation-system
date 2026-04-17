@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text, BigInteger
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text, BigInteger, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -63,7 +63,7 @@ class Contract(Base):
     tien_coc = Column(Float, nullable=False)
     ngay_bat_dau = Column(Date, nullable=False)
     ngay_ket_thuc = Column(Date, nullable=False)
-    trang_thai = Column(String(50), default="Chờ bàn giao") # Chờ bàn giao, Đã bàn giao, Đã thanh lý
+    trang_thai = Column(String(50), default="Chờ bàn giao") # Chờ bàn giao, Hiệu lực, Đã thanh lý
     pdf_link = Column(String(255), nullable=True)
     pdf_data = Column(Text, nullable=True)
     payos_order_code = Column(BigInteger, unique=True, nullable=True) # Để link với thanh toán PayOS
@@ -102,6 +102,7 @@ class Incident(Base):
     loai_su_co = Column(String(100), nullable=False)
     muc_do_khan_cap = Column(String(50), nullable=False) # Bình thường, Khẩn cấp
     mo_ta = Column(Text, nullable=False)
+    anh_su_co = Column(JSON, nullable=True) # List of Base64 Images
     ngay_bao_cao = Column(DateTime, default=datetime.utcnow)
     trang_thai = Column(String(50), default="Đã tiếp nhận") 
     

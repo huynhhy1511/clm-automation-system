@@ -32,7 +32,8 @@ async def create_incident(
         room_id=contract.room_id,
         loai_su_co=incident.loai_su_co,
         muc_do_khan_cap=incident.muc_do_khan_cap,
-        mo_ta=incident.mo_ta
+        mo_ta=incident.mo_ta,
+        anh_su_co=incident.anh_su_co
     )
     db.add(new_incident)
     await db.commit()
@@ -44,10 +45,12 @@ async def create_incident(
     if room:
         payload = {
             "hoTen": tenant.ho_ten,
+            "email": tenant.email,
             "phong": room.ma_phong,
             "loaiSuCo": incident.loai_su_co,
-            "mucDoKhẩnCap": incident.muc_do_khan_cap,
-            "moTa": incident.mo_ta
+            "mucDoKhanCap": incident.muc_do_khan_cap,
+            "moTa": incident.mo_ta,
+            "anhSuCo": incident.anh_su_co
         }
         async with httpx.AsyncClient() as client:
             try:
@@ -82,3 +85,34 @@ async def list_incidents(
         .order_by(models.Incident.ngay_bao_cao.desc())
     )
     return res.scalars().all()
+
+@router.patch("/{incident_id}/status", response_model=schemas.IncidentResponse)
+async def update_incident_status(
+    incident_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin=Depends(get_current_admin)
+):
+    res = await db.execute(select(models.Incident).where(models.Incident.id == incident_id))
+    incident = res.scalar_one_or_none()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    
+    incident.trang_thai = "Đã xử lý" if incident.trang_thai == "Đã tiếp nhận" else "Đã tiếp nhận"
+    await db.commit()
+    await db.refresh(incident)
+    return incident
+
+@router.delete("/{incident_id}")
+async def delete_incident(
+    incident_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin=Depends(get_current_admin)
+):
+    res = await db.execute(select(models.Incident).where(models.Incident.id == incident_id))
+    incident = res.scalar_one_or_none()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    
+    await db.delete(incident)
+    await db.commit()
+    return {"success": True, "message": "Incident deleted"}

@@ -137,12 +137,13 @@ class IncidentBase(BaseModel):
     loai_su_co: str
     muc_do_khan_cap: str
     mo_ta: str
+    anh_su_co: Optional[List[str]] = []
 
 class IncidentCreate(IncidentBase):
     room_id: int
 
 class IncidentClientCreate(IncidentBase):
-    pass # Tenant ID and Room ID are inferred from JWT
+    pass
 
 class IncidentResponse(IncidentBase):
     id: int

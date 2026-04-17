@@ -20,7 +20,8 @@ export function IncidentReportPage() {
   const [formData, setFormData] = useState({
     loai_su_co: "",
     muc_do_khan_cap: "Bình thường",
-    mo_ta: ""
+    mo_ta: "",
+    anh_su_co: [] as string[]
   });
 
   const fetchIncidents = async () => {
@@ -48,7 +49,7 @@ export function IncidentReportPage() {
     try {
       await api.post("/client/incidents/", formData);
       setShowModal(false);
-      setFormData({ loai_su_co: "", muc_do_khan_cap: "Bình thường", mo_ta: "" });
+      setFormData({ loai_su_co: "", muc_do_khan_cap: "Bình thường", mo_ta: "", anh_su_co: [] });
       fetchIncidents();
       alert("Đã tiếp nhận yêu cầu hỗ trợ. Ban Quản Lý sẽ liên hệ sớm!");
     } catch (err: any) {
@@ -57,6 +58,32 @@ export function IncidentReportPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const remaining = 3 - formData.anh_su_co.length;
+      const filesToProcess = Array.from(files).slice(0, remaining);
+      
+      filesToProcess.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({
+            ...prev,
+            anh_su_co: [...prev.anh_su_co, reader.result as string]
+          }));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      anh_su_co: prev.anh_su_co.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -111,7 +138,7 @@ export function IncidentReportPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4">
            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-           <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm relative z-10 shadow-2xl p-6 sm:p-8 animate-in slide-in-from-bottom-5">
+           <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm relative z-10 shadow-2xl p-6 sm:p-8 animate-in slide-in-from-bottom-5 max-h-[90vh] overflow-y-auto">
                <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-black text-slate-800">Gửi Mô Tả Sự Cố</h3>
                   <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
@@ -140,6 +167,42 @@ export function IncidentReportPage() {
                    <div className="space-y-1.5 focus-within:text-primary">
                       <label className="text-sm font-bold text-slate-700">Mô tả chi tiết</label>
                       <textarea required value={formData.mo_ta} onChange={e=>setFormData({...formData, mo_ta: e.target.value})} className="w-full h-24 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium resize-none" placeholder="Hãy mô tả rõ vấn đề bạn đang gặp phải..." />
+                   </div>
+                   
+                   <div className="space-y-1.5 focus-within:text-primary">
+                      <div className="flex justify-between items-center mb-1">
+                          <label className="text-sm font-bold text-slate-700">Hình ảnh minh họa (tối đa 3)</label>
+                          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
+                             {formData.anh_su_co.length}/3 ảnh
+                          </span>
+                      </div>
+                      
+                      {formData.anh_su_co.length < 3 && (
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 cursor-pointer"
+                        />
+                      )}
+                      
+                      {formData.anh_su_co.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                           {formData.anh_su_co.map((img, idx) => (
+                             <div key={idx} className="relative aspect-square">
+                                <img src={img} className="w-full h-full object-cover rounded-xl border border-slate-200 shadow-inner" />
+                                <button 
+                                  type="button"
+                                  onClick={() => removeImage(idx)}
+                                  className="absolute -top-1 -right-1 bg-white rounded-full p-1 shadow-md text-rose-500 hover:bg-rose-50 transition-colors border border-slate-100"
+                                >
+                                   <X size={12} />
+                                </button>
+                             </div>
+                           ))}
+                        </div>
+                      )}
                    </div>
 
                    <button disabled={submitting} type="submit" className="w-full mt-2 py-3.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors flex justify-center items-center gap-2">

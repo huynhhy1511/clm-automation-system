@@ -8,37 +8,37 @@
             {
               "id": "id-1",
               "name": "tenKhach",
-              "value": "={{ $json.body['Họ và tên'] }}",
+              "value": "={{ $json.body.hoTen }}",
               "type": "string"
             },
             {
               "id": "id-2",
               "name": "email",
-              "value": "={{ $json.body.Email }}",
+              "value": "={{ $json.body.email }}",
               "type": "string"
             },
             {
               "id": "id-3",
               "name": "maPhong",
-              "value": "={{ $json.body['Mã phòng'] }}",
+              "value": "={{ $json.body.phong }}",
               "type": "string"
             },
             {
               "id": "id-4",
               "name": "loaiSuCo",
-              "value": "={{ $json.body['Loại sự cố'] }}",
+              "value": "={{ $json.body.loaiSuCo }}",
               "type": "string"
             },
             {
               "id": "id-5",
               "name": "mucDoKhanCap",
-              "value": "={{ $json.body['Mức độ khẩn cấp'] }}",
+              "value": "={{ $json.body.mucDoKhanCap }}",
               "type": "string"
             },
             {
               "id": "id-6",
               "name": "moTa",
-              "value": "={{ $json.body['Mô tả chi tiết'] }}",
+              "value": "={{ $json.body.moTa }}",
               "type": "string"
             },
             {
@@ -179,134 +179,6 @@
       "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
     },
     {
-      "parameters": {
-        "schema": {
-          "__rl": true,
-          "mode": "list",
-          "value": "public"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "name",
-          "value": "incidents"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "room_id": "={{ $json.room_id }}",
-            "tenant_id": "={{ $json.tenant_id }}",
-            "muc_do_khan_cap": "={{ $json.mucDoKhanCap }}",
-            "ngay_bao_cao": "={{ $json.ngayBaoCao }}",
-            "loai_su_co": "={{ $json.loaiSuCo }}",
-            "mo_ta": "={{ $json.moTa }}",
-            "trang_thai": "Đã tiếp nhận"
-          },
-          "matchingColumns": [
-            "id"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "room_id",
-              "displayName": "room_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "tenant_id",
-              "displayName": "tenant_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "loai_su_co",
-              "displayName": "loai_su_co",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "muc_do_khan_cap",
-              "displayName": "muc_do_khan_cap",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "mo_ta",
-              "displayName": "mo_ta",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "ngay_bao_cao",
-              "displayName": "ngay_bao_cao",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "trang_thai",
-              "displayName": "trang_thai",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "id": "c779824a-8b8e-473a-8a94-bead26b3efb4",
-      "name": "Lưu vào PostgreSQL",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        -528,
-        192
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "gdPIEZ4d9jgGIKji",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
       "parameters": {},
       "id": "4c09eb8a-dfe1-4e72-8943-904eacb4e508",
       "name": "Gộp kết quả email",
@@ -320,7 +192,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã ghi nhận sự cố thành công\",\n  \"incidentId\": \"={{ $('Lưu vào PostgreSQL').item.json.id }}\"\n}",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã ghi nhận sự cố thành công\"\n}",
         "options": {}
       },
       "id": "85e5fb1f-e45b-444e-978b-b96d40569d78",
@@ -339,7 +211,7 @@
       "main": [
         [
           {
-            "node": "Lưu vào PostgreSQL",
+            "node": "Kiểm tra mức độ khẩn cấp",
             "type": "main",
             "index": 0
           }
@@ -402,17 +274,6 @@
         [
           {
             "node": "Chuẩn bị dữ liệu sự cố",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Lưu vào PostgreSQL": {
-      "main": [
-        [
-          {
-            "node": "Kiểm tra mức độ khẩn cấp",
             "type": "main",
             "index": 0
           }
