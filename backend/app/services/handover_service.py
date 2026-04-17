@@ -79,7 +79,7 @@ async def perform_handover(db: AsyncSession, contract_id: int):
         "pdfBase64": contract.pdf_data,
         "matKhau": raw_password,
         "tenDangNhap": tenant.email,
-        "trangThai": "Đã bàn giao",
+        "trangThai": "Hiệu lực",
         "khachId": new_user_id
     }
     
