@@ -88,7 +88,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const data = $('Tạo chuỗi xác thực').item.json.bodyData;\nconst description = data.description || \"\";\n\nreturn {\n  ma_phong: description.slice(-3).toLowerCase(),\n  tong_tien_bill: data.amount\n};"
+        "jsCode": "const data = $('Tạo chuỗi xác thực').item.json.bodyData;\nconst description = data.description || \"\";\n\n// Lấy phần mã phòng sau dấu gạch dưới (VD: ThanhToan_P101 -> P101)\n// Nếu không có gạch dưới thì lấy 4 ký tự cuối (VD: P101)\nconst maPhong = description.includes('_') ? description.split('_').pop().toUpperCase() : description.slice(-4).toUpperCase();\n\nreturn {\n  ma_phong: maPhong,\n  tong_tien_bill: data.amount\n};"
       },
       "id": "bc4ecf5b-6c9d-4df5-ba47-9cdce1695e4f",
       "name": "Trích xuất dữ liệu thanh toán PayOS",
@@ -132,12 +132,11 @@
           "conditions": [
             {
               "id": "f5033f2c-62bd-4d17-b162-52aedd7915f4",
-              "leftValue": "",
-              "rightValue": "",
+              "leftValue": "={{ $('Lấy thông tin hợp đồng').item.json.tong_tien }}",
+              "rightValue": "={{ $('Trích xuất dữ liệu thanh toán PayOS').item.json.tong_tien_bill }}",
               "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
+                "type": "number",
+                "operation": "equals"
               }
             }
           ],

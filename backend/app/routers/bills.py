@@ -193,6 +193,9 @@ async def save_invoice(
         bill.chi_so_nuoc_cu = payload.chi_so_nuoc_cu
         bill.chi_so_nuoc_moi = payload.chi_so_nuoc_moi
         bill.tong_tien = payload.tong_tien
+        # Reset trạng thái về 'Chưa thanh toán' để cho phép thanh toán lại với số tiền mới
+        bill.trang_thai = "Chưa thanh toán"
+        bill.payos_order_code = None
 
     # 3. Giải mã và lưu PDF (Chỉ thực hiện nếu có dữ liệu)
     if payload.pdf_base64:

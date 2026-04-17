@@ -21,8 +21,8 @@ type RowData = {
   success: boolean;
 };
 
-const ELEC_PRICE = 3500;
-const WATER_PRICE_PER_PERSON = 100000;
+const ELEC_PRICE = 1000;
+const WATER_PRICE = 1000;
 const N8N_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "http://localhost:5679/webhook/chot-dien-nuoc";
 
 export function BillingPage() {
@@ -69,11 +69,12 @@ export function BillingPage() {
     if (!row) return 0;
 
     const newElec = parseFloat(row.new_electricity) || room.prev_electricity;
+    const newWater = parseFloat(row.new_water) || room.prev_water;
 
     const elecBill = (newElec - room.prev_electricity) * ELEC_PRICE;
-    const waterBill = room.so_nguoi * WATER_PRICE_PER_PERSON;
+    const waterBill = (newWater - room.prev_water) * WATER_PRICE;
     
-    return Math.max(0, elecBill) + waterBill + room.room_price;
+    return Math.max(0, elecBill) + Math.max(0, waterBill) + room.room_price;
   };
 
   const handleFinalize = async (room: ActiveRoom) => {
@@ -206,7 +207,7 @@ export function BillingPage() {
                   <td className="px-6 py-6 text-right">
                     <div className="flex flex-col">
                        <span className="text-2xl font-black text-slate-900">{total.toLocaleString()}đ</span>
-                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 self-end px-2 py-0.5 rounded-full mt-1 uppercase tracking-tighter">Tính theo người</span>
+                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 self-end px-2 py-0.5 rounded-full mt-1 uppercase tracking-tighter">Tính theo chỉ số</span>
                     </div>
                   </td>
 

@@ -39,6 +39,18 @@ async def payos_webhook(request: Request, db: AsyncSession = Depends(get_db)):
             logger.warning("Webhook received without 'data' field (possibly a ping)")
             return {"status": "success", "message": "Webhook acknowledged"}
 
+        # MỚI: Chuyển tiếp dữ liệu nguyên bản sang n8n Workflow 4
+        # Điều này giúp n8n nhận được đúng dữ liệu như từ PayOS
+        import httpx
+        try:
+            async with httpx.AsyncClient() as client:
+                # Địa chỉ n8n:5678 là địa chỉ nội bộ trong Docker
+                # Path 'api/payments/payos-webhook' khớp với cấu hình trong Workflow 4
+                await client.post("http://n8n:5678/webhook/api/payments/payos-webhook", json=body, timeout=5.0)
+                logger.info("Forwarded raw PayOS payload to n8n Workflow 4")
+        except Exception as e:
+            logger.error(f"Failed to forward payload to n8n: {e}")
+
         # Lấy orderCode và status một cách linh hoạt
         order_code = data.get("orderCode")
         

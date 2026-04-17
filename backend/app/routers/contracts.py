@@ -126,24 +126,55 @@ async def delete_contract(
     db: AsyncSession = Depends(get_db),
     current_admin=Depends(get_current_admin)
 ):
-    contract = await db.get(models.Contract, contract_id)
-    if not contract:
-        raise HTTPException(status_code=404, detail="Không tìm thấy hợp đồng")
-    
-    # 1. Reset phòng về trạng thái Trống
-    room = await db.get(models.Room, contract.room_id)
-    if room:
-        room.trang_thai = "Trống"
-    
-    # 2. Xóa Tenant + User liên kết (để email có thể dùng lại)
-    tenant = await db.get(models.Tenant, contract.tenant_id)
-    if tenant:
-        user = await db.get(models.User, tenant.user_id)
-        await db.delete(tenant)
-        if user:
-            await db.delete(user)
-    
-    # 3. Xóa hợp đồng
-    await db.delete(contract)
-    await db.commit()
-    return {"message": "Đã xóa hợp đồng, tài khoản và giải phóng phòng thành công"}
+    try:
+        contract = await db.get(models.Contract, contract_id)
+        if not contract:
+            raise HTTPException(status_code=404, detail="Không tìm thấy hợp đồng")
+        
+        # 1. Reset phòng về trạng thái Trống
+        room = await db.get(models.Room, contract.room_id)
+        if room:
+            room.trang_thai = "Trống"
+        
+        # Lưu lại Tenant ID và User ID trước khi xóa
+        tenant_id = contract.tenant_id
+        user_id = None
+        
+        if tenant_id:
+            tenant = await db.get(models.Tenant, tenant_id)
+            if tenant:
+                user_id = tenant.user_id
+        
+        # 2. Xóa Hợp đồng trước để tránh lỗi khóa ngoại khi xóa Tenant
+        await db.delete(contract)
+        
+        # 3. Xóa các sự cố liên quan đến khách thuê này (nếu có)
+        if tenant_id:
+            incident_res = await db.execute(
+                select(models.Incident).where(models.Incident.tenant_id == tenant_id)
+            )
+            for incident in incident_res.scalars().all():
+                await db.delete(incident)
+        
+        await db.flush() # Đẩy các lệnh xóa liên quan đến contract và incidents
+        
+        if tenant_id:
+            tenant = await db.get(models.Tenant, tenant_id)
+            if tenant:
+                # 4. Xóa Tenant
+                await db.delete(tenant)
+                await db.flush()
+        
+        if user_id:
+            # 5. Xóa User nếu có (để giải phóng email)
+            user = await db.get(models.User, user_id)
+            if user:
+                # Kiểm tra xem User còn liên kết với Tenant nào khác không (đề phòng)
+                # Nhưng do đã xóa Tenant ở trên, nên nếu user_id là duy nhất thì xóa thoải mái
+                await db.delete(user)
+        
+        await db.commit()
+        return {"message": "Đã xóa hợp đồng, tài khoản và giải phóng phòng thành công"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống khi xóa: {str(e)}")
