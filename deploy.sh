@@ -68,7 +68,7 @@ EOF
 echo "Dang kiem tra va khoi dong lai Nginx..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "Dang khoi dong lai n8n..."
-docker compose up -d n8n
+echo "Dang khoi dong lai n8n (ép nạp lại cấu hình)..."
+docker compose up -d --force-recreate n8n
 
 echo "Hoan tat! Hay thu truy cap https://ezliving.id.vn/n8n/"
