@@ -17,6 +17,17 @@ async def payos_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         body = await request.json()
         logger.info(f"PAYOS WEBHOOK RAW PAYLOAD: {body}")
         
+        if payos is None:
+            logger.error("PayOS service is not configured. Cannot verify webhook.")
+            return {"status": "error", "message": "PayOS not configured"}
+            
+        try:
+            # PayOS SDK throws WebhookError if verification fails
+            payos.verifyPaymentWebhookData(body)
+        except Exception as e:
+            logger.error(f"PayOS Webhook Signature Verification Failed: {e}")
+            return {"status": "error", "message": "Invalid Webhook Signature"}
+
         # Luôn ghi lại để debug
         with open("/tmp/payos.log", "a") as f:
             import time, json

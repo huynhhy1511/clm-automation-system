@@ -1,253 +1,345 @@
 {
-  "name": "CLM workflow 4",
   "nodes": [
     {
       "parameters": {
-        "sendTo": "={{ $(\"Chuẩn bị dữ liệu\").item.json.email }}",
-        "subject": "Xác nhận thanh toán - Biên lai điện tử",
-        "message": "=Kính gửi {{ $(\"Chuẩn bị dữ liệu\").item.json.tenKhach }},\n\nCảm ơn bạn đã thanh toán tiền thuê phòng {{ $(\"Chuẩn bị dữ liệu\").item.json.maPhong }} cho tháng {{ $(\"Chuẩn bị dữ liệu\").item.json.thangThanhToan }}.\n\nSố tiền: {{ $(\"Chuẩn bị dữ liệu\").item.json.soTien }} VNĐ\nTrạng thái: Đã thanh toán\n\nĐây là biên lai điện tử xác nhận giao dịch của bạn.\n\nTrân trọng,\nBan quản lý",
+        "httpMethod": "POST",
+        "path": "api/payments/payos-webhook",
+        "responseMode": "responseNode",
         "options": {}
       },
-      "id": "474764d8-38c2-4a5b-905d-d3d96614e3cc",
-      "name": "Gửi Email biên lai",
-      "type": "n8n-nodes-base.gmail",
+      "id": "32b2cf8e-ac83-49c7-92a0-c84d37b1c3ff",
+      "name": "Webhook PayOS",
+      "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        432,
-        -144
+        -336,
+        544
       ],
-      "webhookId": "bb157193-2da8-4dff-bbf9-13e808b8c758",
+      "webhookId": "9c15f1bc-1377-48a2-8ba5-610be6fea57d"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const payloadData = $input.item.json.body.data;\nconst signature = $input.item.json.body.signature;\n\nif (!payloadData || !signature) return { valid: false, signData: \"\", originalSignature: \"\" };\n\nconst sortedKeys = Object.keys(payloadData).sort();\nconst signDataArr = [];\nfor(const k of sortedKeys) {\n    if(payloadData[k] !== undefined && payloadData[k] !== null && typeof payloadData[k] !== 'object' && typeof payloadData[k] !== 'array') {\n        signDataArr.push(`${k}=${payloadData[k]}`);\n    }\n}\nconst signData = signDataArr.join('&');\n\nreturn {\n  signData: signData,\n  originalSignature: signature,\n  bodyData: payloadData\n};"
+      },
+      "id": "2ebf1d6e-86e4-4130-a3a1-5361c04d96fc",
+      "name": "Tạo chuỗi xác thực",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "value": "={{ $json.signData }}",
+        "dataPropertyName": "signData",
+        "secret": "f15b091c09fba77e9912ffa25edcf3b4a58eb771ebf9d244547f626ba000e503"
+      },
+      "id": "f3084d21-e339-4483-a19a-4bd5259133c8",
+      "name": "Tính toán HMAC",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        128,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data }}",
+              "value2": "={{ $json.originalSignature }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2a89036a-409e-4658-a551-e1743124428a",
+      "name": "Kiểm tra Chữ ký HMAC",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Sai chữ ký bảo mật (Invalid Signature)\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "1816aa68-a3ee-4853-b924-bfbfea24e479",
+      "name": "Từ chối Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        528,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $('Tạo chuỗi xác thực').item.json.bodyData;\nconst description = data.description || \"\";\n\nreturn {\n  ma_phong: description.slice(-3).toLowerCase(),\n  tong_tien_bill: data.amount\n};"
+      },
+      "id": "bc4ecf5b-6c9d-4df5-ba47-9cdce1695e4f",
+      "name": "Trích xuất dữ liệu thanh toán PayOS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    u.id AS bill_id,\n    r.ma_phong, \n    u.thang_nam, \n    u.tong_tien, \n    t.ho_ten, \n    t.email\nFROM rooms r\nJOIN utility_bills u ON r.id = u.room_id\nJOIN contracts c ON r.id = c.room_id\nJOIN tenants t ON c.tenant_id = t.id\nWHERE r.ma_phong = '{{ $('Trích xuất dữ liệu thanh toán PayOS').item.json.ma_phong }}'\n  AND u.trang_thai = 'Chưa thanh toán'\nORDER BY u.id DESC\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "2a8d88d8-8fa1-4714-87b6-48260d5d4ede",
+      "name": "Lấy thông tin hợp đồng",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        768,
+        432
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "8WkP0uvjcCa4829n",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f5033f2c-62bd-4d17-b162-52aedd7915f4",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "74793335-b30f-4232-9048-b8159df65b7e",
+      "name": "Kiểm tra số tiền khớp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Số tiền thanh toán không khớp với hóa đơn\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "98c3e054-91db-4bdb-a20b-3ebb58df5b8e",
+      "name": "Trả lỗi số tiền không khớp",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1168,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE utility_bills SET trang_thai = 'Đã thanh toán' WHERE id = {{ $json.bill_id }};",
+        "options": {}
+      },
+      "id": "77e2933a-93f6-45db-8634-fae34912ffd9",
+      "name": "Cập nhật trạng thái gửi DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1168,
+        320
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "8WkP0uvjcCa4829n",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Lấy thông tin hợp đồng').item.json.email }}",
+        "subject": "Xác nhận thanh toán hóa đơn điện nước thành công - Biên lai điện tử",
+        "emailType": "text",
+        "message": "=Kính gửi {{ $('Lấy thông tin hợp đồng').item.json.ho_ten }},\n\nChúng tôi xác nhận đã nhận được khoản thanh toán hóa đơn điện nước của bạn qua PayOS (Đã xác minh an toàn).\n\nChi tiết hóa đơn điện nước:\n- Phòng: {{ $('Lấy thông tin hợp đồng').item.json.ma_phong }}\n- Kỳ hóa đơn: {{ $('Lấy thông tin hợp đồng').item.json.thang_nam }}\n- Tổng tiền đã đóng: {{ $('Lấy thông tin hợp đồng').item.json.tong_tien }} VNĐ\n- Trạng thái: Đã thanh toán thành công\n\nCảm ơn bạn đã thanh toán hóa đơn đúng hạn.\n\nTrân trọng,\nBan quản lý",
+        "options": {}
+      },
+      "id": "86a2401d-d6b4-4a41-bde4-48fc74adc571",
+      "name": "Gửi bill cho khách hàng",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        320
+      ],
+      "webhookId": "8193ec77-44a5-4fb9-b36b-cafdf0203f7e",
       "credentials": {
         "gmailOAuth2": {
-          "id": "PDjIrqCaJnff5pye",
+          "id": "X3bziJl7KZC9P83p",
           "name": "Gmail account"
         }
       }
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "id-1",
-              "name": "tenKhach",
-              "value": "={{ $json.tenKhach || $json.hoVaTen }}",
-              "type": "string"
-            },
-            {
-              "id": "id-2",
-              "name": "email",
-              "value": "={{ $json.email }}",
-              "type": "string"
-            },
-            {
-              "id": "id-3",
-              "name": "maPhong",
-              "value": "={{ $json.maPhong }}",
-              "type": "string"
-            },
-            {
-              "id": "id-4",
-              "name": "thangThanhToan",
-              "value": "={{ $json.thangThanhToan }}",
-              "type": "string"
-            },
-            {
-              "id": "id-5",
-              "name": "soTien",
-              "value": "={{ $json.soTien }}",
-              "type": "number"
-            },
-            {
-              "id": "id-6",
-              "name": "anhBill",
-              "value": "={{ $json.anhBillUrl }}",
-              "type": "string"
-            },
-            {
-              "id": "id-7",
-              "name": "trangThai",
-              "value": "Đã thanh toán",
-              "type": "string"
-            },
-            {
-              "id": "cf6862c3-eb04-49e0-a8fd-8aa30e0efc6a",
-              "name": "thoiGian",
-              "value": "={{ new Date().toISOString() }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "a2516b62-ef3a-47ea-86dd-f743cb752ae7",
-      "name": "Chuẩn bị dữ liệu",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -16,
-        -144
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const data = $input.item.json.body || $input.item.json;\nconst files = data.anhChuyenKhoan || [];\nconst fileUrls = Array.isArray(files) ? files.map(f => f.url || f).filter(url => url).join(', ') : files;\n\nreturn {\n  ...data,\n  anhBillUrl: fileUrls\n};"
-      },
-      "id": "60c4f2d0-bd57-4379-94ad-573430929240",
-      "name": "Xử lý ảnh bill",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -240,
-        -144
-      ]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "payment-confirmation",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "be38397d-c6c1-4640-88ae-83fe5c7cb104",
-      "name": "Webhook nhận dữ liệu từ React",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [
-        -464,
-        -144
-      ],
-      "webhookId": "2e280bff-9363-4f58-b687-c0fb536ca58d"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "<__PLACEHOLDER_VALUE__fastapi_backend_url__>/api/payments",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "tenKhach",
-              "value": "={{ $json.tenKhach }}"
-            },
-            {
-              "name": "email",
-              "value": "={{ $json.email }}"
-            },
-            {
-              "name": "maPhong",
-              "value": "={{ $json.maPhong }}"
-            },
-            {
-              "name": "thangThanhToan",
-              "value": "={{ $json.thangThanhToan }}"
-            },
-            {
-              "name": "soTien",
-              "value": "={{ $json.soTien }}"
-            },
-            {
-              "name": "anhBill",
-              "value": "={{ $json.anhBill }}"
-            },
-            {
-              "name": "trangThai",
-              "value": "={{ $json.trangThai }}"
-            },
-            {
-              "name": "thoiGian",
-              "value": "={{ $json.thoiGian }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "fe714cab-c6a6-46e5-aa97-4c725e408aeb",
-      "name": "Lưu vào PostgreSQL qua FastAPI",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        208,
-        -144
-      ]
-    },
-    {
-      "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Xác nhận thanh toán thành công. Email biên lai đã được gửi.\",\n  \"data\": {\n    \"maPhong\": \"={{ $('Chuẩn bị dữ liệu').item.json.maPhong }}\",\n    \"thangThanhToan\": \"={{ $('Chuẩn bị dữ liệu').item.json.thangThanhToan }}\",\n    \"soTien\": \"={{ $('Chuẩn bị dữ liệu').item.json.soTien }}\"\n  }\n}",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Thanh toán đã được xác nhận và bill đã được gửi\",\n  \"data\": {\n    \"maPhong\": \"={{ $('Lấy thông tin hợp đồng').item.json.ma_phong }}\",\n    \"soTien\": \"={{ $('Lấy thông tin hợp đồng').item.json.tong_tien }}\",\n    \"trangThai\": \"confirmed\"\n  }\n}",
         "options": {}
       },
-      "id": "0300eef0-7dba-4907-908e-6801e740c77d",
-      "name": "Trả response cho React",
+      "id": "78f8b46c-f8c4-4300-970b-f19d5b50b871",
+      "name": "Trả kết quả phản hồi",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
+      "typeVersion": 1.5,
       "position": [
-        656,
-        -144
+        1680,
+        320
       ]
     }
   ],
-  "pinData": {},
   "connections": {
-    "Gửi Email biên lai": {
+    "Webhook PayOS": {
       "main": [
         [
           {
-            "node": "Trả response cho React",
+            "node": "Tạo chuỗi xác thực",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Chuẩn bị dữ liệu": {
+    "Tạo chuỗi xác thực": {
       "main": [
         [
           {
-            "node": "Lưu vào PostgreSQL qua FastAPI",
+            "node": "Tính toán HMAC",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Xử lý ảnh bill": {
+    "Tính toán HMAC": {
       "main": [
         [
           {
-            "node": "Chuẩn bị dữ liệu",
+            "node": "Kiểm tra Chữ ký HMAC",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Webhook nhận dữ liệu từ React": {
+    "Kiểm tra Chữ ký HMAC": {
       "main": [
         [
           {
-            "node": "Xử lý ảnh bill",
+            "node": "Trích xuất dữ liệu thanh toán PayOS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Từ chối Webhook",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Lưu vào PostgreSQL qua FastAPI": {
+    "Trích xuất dữ liệu thanh toán PayOS": {
       "main": [
         [
           {
-            "node": "Gửi Email biên lai",
+            "node": "Lấy thông tin hợp đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy thông tin hợp đồng": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra số tiền khớp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra số tiền khớp": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật trạng thái gửi DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trả lỗi số tiền không khớp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật trạng thái gửi DB": {
+      "main": [
+        [
+          {
+            "node": "Gửi bill cho khách hàng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi bill cho khách hàng": {
+      "main": [
+        [
+          {
+            "node": "Trả kết quả phản hồi",
             "type": "main",
             "index": 0
           }
@@ -255,17 +347,9 @@
       ]
     }
   },
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
-  },
-  "versionId": "c575fa55-6280-49f8-9af7-42de217e1e00",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "dfa6f32f7e29f69da13f212b0e5069899ff013939265af23f1b4897a0412c5a4"
-  },
-  "id": "zetZP7N3YBwjh09fWbZfF",
-  "tags": []
+    "instanceId": "a3faff9b6196ac5332ee2c10061db08c7e0d6e3ba4c279045337ec16c595ccfa"
+  }
 }
