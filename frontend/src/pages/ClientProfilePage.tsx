@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 import { UserCircle, ShieldCheck } from "lucide-react";
 
 export function ClientProfilePage() {
@@ -8,10 +8,7 @@ export function ClientProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:8000/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get("/auth/me");
         setProfile(res.data);
       } catch (e) {
         console.error(e);

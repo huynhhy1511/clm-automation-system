@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Lock, Mail } from "lucide-react";
-import axios from "axios";
+import { api } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
@@ -21,7 +21,7 @@ export function LoginPage() {
     params.append('password', password);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/login", params, {
+      const res = await api.post("/auth/login", params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
       localStorage.setItem("token", res.data.access_token);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowRight, CheckCircle2, Home, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 export function LandingPage() {
   const [rooms, setRooms] = useState<any[]>([]);
@@ -31,7 +31,7 @@ export function LandingPage() {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/rooms/");
+        const res = await api.get("/rooms/");
         setRooms(res.data.filter((r: any) => r.trang_thai === "Trống"));
       } catch (error) {
         console.error("Error fetching rooms", error);
@@ -86,7 +86,7 @@ export function LandingPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await axios.post("http://localhost:8000/api/booking-requests/", {
+      await api.post("/booking-requests/", {
         ...formData,
         room_id: selectedRoom.id,
         so_thang_thue: parseInt(formData.so_thang_thue),

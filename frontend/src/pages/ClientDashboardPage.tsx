@@ -12,6 +12,7 @@ import {
   VolumeX, 
   ExternalLink 
 } from "lucide-react";
+import { api } from "@/lib/api";
 
 export function ClientDashboardPage() {
   const [tenant, setTenant] = useState<any>(null);
@@ -21,20 +22,13 @@ export function ClientDashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        
         // Fetch Tenant Info
-        const tenantRes = await fetch("http://localhost:8000/api/tenants/me", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const tenantData = await tenantRes.json();
-        setTenant(tenantData);
+        const tenantRes = await api.get("/tenants/me");
+        setTenant(tenantRes.data);
 
         // Fetch Latest Bill
-        const billsRes = await fetch("http://localhost:8000/api/bills/", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const billsData = await billsRes.json();
+        const billsRes = await api.get("/bills/");
+        const billsData = billsRes.data;
         if (billsData.length > 0) {
           // Lấy hóa đơn mới nhất (theo ID hoặc tháng)
           setBill(billsData.sort((a: any, b: any) => b.id - a.id)[0]);
