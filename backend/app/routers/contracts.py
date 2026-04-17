@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel
 from typing import Optional
+from dateutil.relativedelta import relativedelta
 from app import schemas, models
 from app.database import get_db
 from app.api.deps import get_current_admin
@@ -28,6 +29,49 @@ async def save_pdf_to_contract(payload: SavePdfPayload, db: AsyncSession = Depen
         contract.pdf_link = payload.pdf_link
     await db.commit()
     return {"message": "PDF saved successfully", "contract_id": payload.contract_id}
+
+
+class ContractDecision(BaseModel):
+    contractId: int
+    action: str
+    timestamp: Optional[str] = None
+
+@router.post("/update-decision")
+async def update_decision(payload: ContractDecision, db: AsyncSession = Depends(get_db)):
+    """Ghi nhận quyết định gia hạn hoặc trả phòng từ Tenant và tự động hóa các bước tiếp theo"""
+    contract = await db.get(models.Contract, payload.contractId)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hợp đồng")
+    
+    message = ""
+    if payload.action == "renew":
+        # 1. Tự động gia hạn thêm 6 tháng
+        old_expiry = contract.ngay_ket_thuc
+        contract.ngay_ket_thuc = old_expiry + relativedelta(months=6)
+        message = f"Cảm ơn bạn! Hợp đồng đã được gia hạn tự động thêm 6 tháng. Ngày hết hạn mới: {contract.ngay_ket_thuc.strftime('%d/%m/%Y')}."
+    
+    elif payload.action == "return":
+        # 2. Đánh dấu thanh lý và giải phóng phòng
+        contract.trang_thai = "Đã thanh lý"
+        room = await db.get(models.Room, contract.room_id)
+        if room:
+            room.trang_thai = "Trống"
+        message = "Cảm ơn bạn! Chúng tôi đã ghi nhận yêu cầu trả phòng và sẽ tiến hành các thủ tục thanh lý."
+    
+    else:
+        message = "Cảm ơn bạn đã phản hồi. Chúng tôi đã ghi nhận lựa chọn của bạn."
+
+    await db.commit()
+    
+    # Log the decision
+    print(f"--- TENANT DECISION PROCESSED ---")
+    print(f"Contract ID: {payload.contractId}, Action: {payload.action}")
+    
+    return {
+        "status": "success", 
+        "message": message,
+        "contractId": payload.contractId
+    }
 
 
 @router.post("/", response_model=schemas.ContractResponse)
