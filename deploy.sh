@@ -38,25 +38,30 @@ server {
     }
 
     location /n8n/ {
-        proxy_pass http://localhost:8888/n8n/;
+        proxy_pass http://localhost:8888/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
+        
+        # Rewrite HTML content to fix asset paths
+        sub_filter '/assets/' '/n8n/assets/';
+        sub_filter '/static/' '/n8n/static/';
+        sub_filter_once off;
+        sub_filter_types text/html text/css application/javascript;
+
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "Upgrade";
         proxy_read_timeout 86400;
+        proxy_redirect off;
     }
 
-    # Bắt các đường dẫn assets bị dính chữ cho n8n
-    location ~ ^/(n8nassets|n8nstatic) {
-        proxy_pass http://localhost:8888;
+    # Bắt các đường dẫn assets khi n8n gọi trực tiếp từ /assets/
+    location /assets/ {
+        proxy_pass http://localhost:8888/assets/;
         proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     location = /n8n {
