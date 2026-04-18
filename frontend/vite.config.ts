@@ -9,6 +9,13 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     allowedHosts: true,
+    hmr: false,
+    proxy: {
+      '/api': {
+        target: 'http://clm_fastapi:8000',
+        changeOrigin: true,
+      }
+    }
   },
   resolve: {
     alias: {
