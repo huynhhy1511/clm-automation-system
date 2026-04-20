@@ -38,25 +38,19 @@ server {
     }
 
     location /n8n/ {
-        proxy_pass http://localhost:8888/n8n/;
+        proxy_pass http://localhost:5679;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Forwarded-Prefix /n8n;
+
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "Upgrade";
         proxy_read_timeout 86400;
-    }
-
-    # Bắt các đường dẫn assets bị dính chữ cho n8n
-    location ~ ^/(n8nassets|n8nstatic) {
-        proxy_pass http://localhost:8888;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
     }
 
     location = /n8n {
@@ -68,7 +62,7 @@ EOF
 echo "Dang kiem tra va khoi dong lai Nginx..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "Dang khoi dong lai n8n..."
-docker compose up -d n8n
+echo "Dang khoi dong lai n8n (ép nạp lại cấu hình)..."
+docker compose up -d --force-recreate n8n
 
 echo "Hoan tat! Hay thu truy cap https://ezliving.id.vn/n8n/"
