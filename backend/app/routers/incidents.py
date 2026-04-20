@@ -8,7 +8,7 @@ from app.api.deps import get_current_user, get_current_admin
 
 router = APIRouter()
 
-N8N_WEBHOOK_URL_INCIDENT = "http://n8n:5678/webhook/bao-cao-su-co"
+N8N_WEBHOOK_URL_INCIDENT = "https://skewed-privatize-igloo.ngrok-free.dev/webhook/bao-cao-su-co"
 
 @router.post("/", response_model=schemas.IncidentResponse)
 async def create_incident(
@@ -44,13 +44,11 @@ async def create_incident(
 
     if room:
         payload = {
-            "hoTen": tenant.ho_ten,
-            "email": tenant.email,
-            "phong": room.ma_phong,
-            "loaiSuCo": incident.loai_su_co,
-            "mucDoKhanCap": incident.muc_do_khan_cap,
-            "moTa": incident.mo_ta,
-            "anhSuCo": incident.anh_su_co
+            "incident_id": new_incident.id,
+            "room_id": room.ma_phong,
+            "user_name": tenant.ho_ten,
+            "description": incident.mo_ta,
+            "image_url": incident.anh_su_co[0] if incident.anh_su_co else None
         }
         async with httpx.AsyncClient() as client:
             try:

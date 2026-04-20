@@ -81,6 +81,7 @@ class ContractResponse(ContractBase):
     so_nguoi: int
     tenant: Optional[TenantResponse] = None
     room: Optional[RoomResponse] = None
+    payos_order_code: Optional[int] = None
 
     class Config:
         from_attributes = True

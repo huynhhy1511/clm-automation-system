@@ -19,7 +19,7 @@ export function IncidentReportPage() {
   
   const [formData, setFormData] = useState({
     loai_su_co: "",
-    muc_do_khan_cap: "Bình thường",
+    muc_do_khan_cap: "Đợi AI đánh giá",
     mo_ta: "",
     anh_su_co: [] as string[]
   });
@@ -49,7 +49,7 @@ export function IncidentReportPage() {
     try {
       await api.post("/client/incidents/", formData);
       setShowModal(false);
-      setFormData({ loai_su_co: "", muc_do_khan_cap: "Bình thường", mo_ta: "", anh_su_co: [] });
+      setFormData({ loai_su_co: "", muc_do_khan_cap: "Đợi AI đánh giá", mo_ta: "", anh_su_co: [] });
       fetchIncidents();
       alert("Đã tiếp nhận yêu cầu hỗ trợ. Ban Quản Lý sẽ liên hệ sớm!");
     } catch (err: any) {
@@ -155,13 +155,6 @@ export function IncidentReportPage() {
                          <option value="Nước">Sự cố Nước (Rò rỉ, mất nước)</option>
                          <option value="Nội thất">Hư hỏng Nội thất</option>
                          <option value="Khác">Vấn đề khác</option>
-                      </select>
-                   </div>
-                   <div className="space-y-1.5 focus-within:text-primary">
-                      <label className="text-sm font-bold text-slate-700">Mức độ tình hình</label>
-                      <select required value={formData.muc_do_khan_cap} onChange={e=>setFormData({...formData, muc_do_khan_cap: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium">
-                         <option value="Bình thường">Bình thường (Có thể chờ đợi)</option>
-                         <option value="Khẩn cấp">Rất Khẩn cấp (Cần xử lý ngay)</option>
                       </select>
                    </div>
                    <div className="space-y-1.5 focus-within:text-primary">

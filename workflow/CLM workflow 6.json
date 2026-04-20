@@ -1,112 +1,115 @@
 {
+  "name": "CLM WORKLOW 6",
   "nodes": [
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "id-1",
-              "name": "tenKhach",
-              "value": "={{ $json.body.hoTen }}",
-              "type": "string"
-            },
-            {
-              "id": "id-2",
-              "name": "email",
-              "value": "={{ $json.body.email }}",
-              "type": "string"
-            },
-            {
-              "id": "id-3",
-              "name": "maPhong",
-              "value": "={{ $json.body.phong }}",
-              "type": "string"
-            },
-            {
-              "id": "id-4",
-              "name": "loaiSuCo",
-              "value": "={{ $json.body.loaiSuCo }}",
-              "type": "string"
-            },
-            {
-              "id": "id-5",
-              "name": "mucDoKhanCap",
-              "value": "={{ $json.body.mucDoKhanCap }}",
-              "type": "string"
-            },
-            {
-              "id": "id-6",
-              "name": "moTa",
-              "value": "={{ $json.body.moTa }}",
-              "type": "string"
-            },
-            {
-              "id": "id-7",
-              "name": "ngayBaoCao",
-              "value": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
-              "type": "string"
-            }
-          ]
-        },
+        "httpMethod": "POST",
+        "path": "bao-cao-su-co",
+        "responseMode": "lastNode",
         "options": {}
       },
-      "id": "15b68274-4de4-4bbd-8609-9fbdfdffde10",
-      "name": "Chuẩn bị dữ liệu sự cố1",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "id": "add6ed99-493d-411c-b487-bd8e910b8e3a",
+      "name": "Webhook - Incident Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
       "position": [
-        560,
-        1328
+        -112,
+        48
+      ],
+      "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là chuyên gia quản lý tòa nhà thông minh. Hãy phân tích báo cáo sự cố sau từ khách thuê:\n'{{ $json.body.description }}'\n\nNhiệm vụ của bạn:\n1. Phân loại cấp độ (suggested_level):\n   - Mức 1 (Khẩn cấp): Các sự cố cháy nổ, rò rỉ gas, sập đổ, rò điện nguy hiểm hoặc các tình huống đe dọa trực tiếp tính mạng và tài sản lớn.\n   - Mức 2 (Ưu tiên): Mất điện toàn khu, mất nước sạch, rò rỉ nước lớn, hỏng khóa cửa chính hoặc sự cố làm gián đoạn sinh hoạt nghiêm trọng.\n   - Mức 3 (Bình thường): Hỏng bóng đèn, Wifi yếu, vòi nước rỉ nhẹ, hỏng vặt, các lỗi thẩm mỹ không gấp.\n2. Tóm tắt sự cố (summary): Viết một câu tóm tắt ngắn gọn báo cáo sự cố để chủ trọ đọc nhanh.\n3. Độ nguy hiểm (is_dangerous): Trả về true nếu có nguy cơ cháy nổ/điện giật, ngược lại trả về false.\n\nHãy trả về dữ liệu đúng định dạng JSON yêu cầu.\n",
+        "hasOutputParser": true
+      },
+      "id": "eb748da1-13dc-4873-a91d-508f83ce0b9b",
+      "name": "AI Analysis",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        288,
+        48
       ]
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "id-1",
-              "leftValue": "={{ $json.mucDoKhanCap }}",
-              "rightValue": "Khẩn cấp",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
+        "modelName": "models/gemini-flash-latest",
         "options": {}
       },
-      "id": "b9747b9f-4273-40b2-b95b-be628f676b64",
-      "name": "Kiểm tra mức độ khẩn cấp1",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "id": "9bb2b63e-14d8-49f6-b7f9-e69db46ddf01",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
       "position": [
-        816,
-        1328
+        192,
+        256
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7JafNzGluQ6yXGcr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"suggested_level\": {\n      \"type\": \"number\"\n    },\n    \"summary\": {\n      \"type\": \"string\"\n    },\n    \"is_dangerous\": {\n      \"type\": \"boolean\"\n    }\n  }\n}"
+      },
+      "id": "b804a86c-6648-431e-a2b2-b50a5c5eda59",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1,
+      "position": [
+        400,
+        256
       ]
     },
     {
       "parameters": {
         "chatId": "-1003790123986",
-        "text": "=🚨 SỰ CỐ KHẨN CẤP!\n\nPhòng: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.maPhong }}\nKhách: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.tenKhach }}\nEmail khách hàng: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.email }}\nLoại sự cố: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.loaiSuCo }}\nMô tả: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.moTa }}\nThời gian: {{ $node[\"Chuẩn bị dữ liệu sự cố1\"].json.ngayBaoCao }}\n\n\nVui lòng xử lý ngay!",
+        "text": "=🚨 CÓ BÁO CÁO SỰ CỐ MỚI\n\nPhòng: {{ $('Webhook - Incident Report').item.json.body.room_id }}\nKhách báo: {{ $('Webhook - Incident Report').item.json.body.user_name }}\nCấp độ đề xuất (AI): Mức {{ $json.suggested_level }}\nTóm tắt (AI): {{ $json.summary }}\nMô tả gốc: {{ $('Webhook - Incident Report').item.json.body.description }}\n\nVui lòng bấm nút xác nhận cấp độ bên dưới:",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🔴 Mức 1 (Khẩn cấp)",
+                    "additionalFields": {
+                      "callback_data": "=1_{{ $('Webhook - Incident Report').item.json.body.incident_id || '0' }}"
+                    }
+                  },
+                  {
+                    "text": "🟡 Mức 2 (Ưu tiên)",
+                    "additionalFields": {
+                      "callback_data": "=2_{{ $('Webhook - Incident Report').item.json.body.incident_id || '0' }}"
+                    }
+                  },
+                  {
+                    "text": "🔵 Mức 3 (Bình thường)",
+                    "additionalFields": {
+                      "callback_data": "=3_{{ $('Webhook - Incident Report').item.json.body.incident_id || '0' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
         "additionalFields": {}
       },
-      "id": "03d7880c-229c-4601-9773-e1f449ed7682",
-      "name": "Thông báo Telegram khẩn cấp1",
+      "id": "2c3710a1-38ee-449a-adc2-ad39977e0005",
+      "name": "Send Telegram to Owner",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1344,
-        1152
+        640,
+        48
       ],
-      "webhookId": "450a4620-13c5-45f2-a5ff-ab6b86dbedba",
+      "webhookId": "a13eb7f3-dc5b-46c5-bf52-22b823e70b79",
       "credentials": {
         "telegramApi": {
           "id": "8OipU1vjlzGynpLq",
@@ -116,20 +119,182 @@
     },
     {
       "parameters": {
-        "sendTo": "={{ $json.email }}",
-        "subject": "=Xác nhận tiếp nhận sự cố - Phòng {{ $json.maPhong }}",
-        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #d32f2f;\">🚨 Sự cố khẩn cấp đã được ghi nhận</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố <strong>KHẨN CẤP</strong> từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #ffebee; padding: 15px; border-left: 4px solid #d32f2f; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p style=\"color: #d32f2f; font-weight: bold;\">⚡ Thợ sửa chữa sẽ đến trong vòng 2-4 giờ tới.</p>\n  <p>Xin cảm ơn sự thông báo kịp thời của bạn!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
+        "updates": [
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "992cc69a-103a-4878-aa30-39fdef916626",
+      "name": "Telegram Trigger - Response",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        496
+      ],
+      "webhookId": "tele-bot-callback",
+      "credentials": {
+        "telegramApi": {
+          "id": "8OipU1vjlzGynpLq",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "level",
+              "value": "={{ $json.callback_query.data.split('_')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "incident_id",
+              "value": "={{ $json.callback_query.data.split('_')[1] }}",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
-      "id": "bc05e176-9423-414b-9264-44eeae2de33b",
-      "name": "Email phản hồi khách hàng1",
+      "id": "51c42e20-c5e8-47c2-8b0b-1a54da89408e",
+      "name": "Parse Callback Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE incidents SET muc_do_khan_cap = \nCASE \n  WHEN TRIM('{{ $json.level }}') = '1' THEN 'Khẩn cấp'\n  WHEN TRIM('{{ $json.level }}') = '2' THEN 'Ưu tiên'\n  WHEN TRIM('{{ $json.level }}') = '3' THEN 'Bình thường'\n  ELSE 'Bình thường'\nEND\nWHERE id = {{ $json.incident_id }};\n\nSELECT \n  TRIM('{{ $json.level }}') as level_ai, -- Lấy luôn giá trị level vào đây\n  p.ma_phong, t.ho_ten, t.email, i.loai_su_co, i.mo_ta \nFROM incidents i\nJOIN rooms p ON i.room_id = p.id\nJOIN tenants t ON i.tenant_id = t.id\nWHERE i.id = {{ $json.incident_id }};\n",
+        "options": {}
+      },
+      "id": "262cb70e-f314-4e4b-a1c6-943d3efa8619",
+      "name": "Cập nhật DB & Lấy Info",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        400,
+        496
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "8WkP0uvjcCa4829n",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.level_ai }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Khẩn cấp"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.level_ai }}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ưu tiên"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c3",
+                    "leftValue": "={{ $json.level_ai }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Bình thường"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55555dfd-1605-42eb-a8f8-5191c61ffc84",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        640,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "🚨 CẢNH BÁO KHẨN CẤP TỪ TÒA NHÀ",
+        "message": "=<div style=\"color: red; font-size: 16px;\">\n  <h2>CẢNH BÁO TÒA NHÀ</h2>\n  <p>Hệ thống phát hiện sự cố cháy nổ / nguy hiểm tại tòa nhà (Phòng {{ $('Cập nhật DB & Lấy Info').item.json.ma_phong }}). </p>\n  <p>Vui lòng giữ bình tĩnh và làm theo chỉ dẫn an toàn ngay lập tức.</p>\n</div>",
+        "options": {}
+      },
+      "id": "c71b789e-f681-47ad-900f-fc0e83725765",
+      "name": "Mass Email Alert",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        1136,
-        1152
+        944,
+        304
       ],
-      "webhookId": "ce3cfbba-a3a5-4c7b-b6a6-00d60fcc7057",
+      "webhookId": "edf25e65-2e70-42e8-b1a3-e6dde6a77885",
       "credentials": {
         "gmailOAuth2": {
           "id": "X3bziJl7KZC9P83p",
@@ -140,19 +305,19 @@
     {
       "parameters": {
         "sendTo": "={{ $json.email }}",
-        "subject": "=Xác nhận tiếp nhận sự cố - Phòng {{ $json.maPhong }}",
-        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #1976d2;\">✅ Đã ghi nhận sự cố</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Chúng tôi đã nhận được báo cáo sự cố từ phòng <strong>{{ $json.maPhong }}</strong>.</p>\n  <div style=\"background: #e3f2fd; padding: 15px; border-left: 4px solid #1976d2; margin: 20px 0;\">\n    <p><strong>Loại sự cố:</strong> {{ $json.loaiSuCo }}</p>\n    <p><strong>Mô tả:</strong> {{ $json.moTa }}</p>\n  </div>\n  <p>🔧 Thợ sửa chữa sẽ liên hệ và đến trong vòng <strong>24 giờ tới</strong>.</p>\n  <p>Cảm ơn bạn đã thông báo!</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
+        "subject": "=Thông báo sự cố - {{ $json.loai_su_co }}",
+        "message": "=Chào {{ $json.ho_ten }}, chúng tôi đã tiếp nhận báo cáo về [{{ $json.loai_su_co }} - {{ $json.mo_ta }}]. \nSự cố ĐƯỢC ƯU TIÊN xử lý. Nhân viên kỹ thuật sẽ liên hệ trong thời gian sớm nhất.",
         "options": {}
       },
-      "id": "b4340773-f644-437f-bb0b-8571cb60c711",
-      "name": "Email phản hồi bình thường1",
+      "id": "f1a6885d-e13a-4054-aa68-86f4895e04d4",
+      "name": "High Priority Email",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        1136,
-        1520
+        944,
+        448
       ],
-      "webhookId": "1f04fb70-2d7f-424f-aef3-7e034886ee7b",
+      "webhookId": "626df8b9-453a-4dc5-8f51-0676af278385",
       "credentials": {
         "gmailOAuth2": {
           "id": "X3bziJl7KZC9P83p",
@@ -162,137 +327,164 @@
     },
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "bao-cao-su-co",
-        "responseMode": "responseNode",
-        "options": {}
+        "chatId": "-1003790123986",
+        "text": "=✅ Đã xác nhận mức độ {{ $json.level_ai }}\n(Sự kiện đã đóng)",
+        "additionalFields": {}
       },
-      "id": "775efc2b-b52c-4371-a041-5bf3762e8e86",
-      "name": "Nhận báo cáo từ React1",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
+      "id": "654d1a90-2e56-4045-9452-c42f420d3c51",
+      "name": "Xóa Nút Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
       "position": [
-        304,
-        1328
+        1280,
+        544
       ],
-      "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
-    },
-    {
-      "parameters": {},
-      "id": "c09b8c43-7255-4f5e-b10d-afb7307090b4",
-      "name": "Gộp kết quả email1",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1552,
-        1360
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã ghi nhận sự cố thành công\"\n}",
-        "options": {}
-      },
-      "id": "7fdcd1f0-b767-4411-92dc-bcc741351c00",
-      "name": "Trả response về React1",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
-      "position": [
-        1888,
-        1360
-      ]
+      "webhookId": "0cf5c927-d221-4e9b-880a-f2607e2cd217",
+      "credentials": {
+        "telegramApi": {
+          "id": "8OipU1vjlzGynpLq",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
+  "pinData": {},
   "connections": {
-    "Chuẩn bị dữ liệu sự cố1": {
+    "Webhook - Incident Report": {
       "main": [
         [
           {
-            "node": "Kiểm tra mức độ khẩn cấp1",
+            "node": "AI Analysis",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Kiểm tra mức độ khẩn cấp1": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Analysis": {
       "main": [
         [
           {
-            "node": "Email phản hồi khách hàng1",
+            "node": "Send Telegram to Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger - Response": {
+      "main": [
+        [
+          {
+            "node": "Parse Callback Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Callback Data": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật DB & Lấy Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật DB & Lấy Info": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Mass Email Alert",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Email phản hồi bình thường1",
+            "node": "High Priority Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Xóa Nút Telegram",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Thông báo Telegram khẩn cấp1": {
+    "Mass Email Alert": {
       "main": [
         [
           {
-            "node": "Gộp kết quả email1",
+            "node": "Xóa Nút Telegram",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Email phản hồi khách hàng1": {
+    "High Priority Email": {
       "main": [
         [
           {
-            "node": "Thông báo Telegram khẩn cấp1",
+            "node": "Xóa Nút Telegram",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Email phản hồi bình thường1": {
-      "main": [
+    "Structured Output Parser": {
+      "ai_outputParser": [
         [
           {
-            "node": "Gộp kết quả email1",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Nhận báo cáo từ React1": {
-      "main": [
-        [
-          {
-            "node": "Chuẩn bị dữ liệu sự cố1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gộp kết quả email1": {
-      "main": [
-        [
-          {
-            "node": "Trả response về React1",
-            "type": "main",
+            "node": "AI Analysis",
+            "type": "ai_outputParser",
             "index": 0
           }
         ]
       ]
     }
   },
-  "pinData": {},
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "14eb59a7-5023-4655-b02b-09fd7b9e0af2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a3faff9b6196ac5332ee2c10061db08c7e0d6e3ba4c279045337ec16c595ccfa"
-  }
+  },
+  "id": "LbJOKaYPM0tkiNr7",
+  "tags": []
 }
