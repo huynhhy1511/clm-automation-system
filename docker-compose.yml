@@ -67,7 +67,7 @@ services:
     container_name: n8n_clm_system
     restart: unless-stopped
     ports:
-      - "8888:5678"
+      - "5679:5678"
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,10 +76,12 @@ services:
     environment:
       - N8N_PROTOCOL=https
       - NODE_ENV=production
-      - N8N_PATH=/n8n/
+      - N8N_BASE_URL=https://ezliving.id.vn/n8n/
       - WEBHOOK_URL=https://ezliving.id.vn/n8n/
       - N8N_EDITOR_BASE_URL=https://ezliving.id.vn/n8n/
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - N8N_PATH=/n8n/
+      - N8N_PORT=5678
 
       # Cấu hình n8n sử dụng PostgreSQL làm DB chính
       - DB_TYPE=postgresdb
