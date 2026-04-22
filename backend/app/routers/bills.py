@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
-N8N_WEBHOOK_URL_BILLS = "http://n8n:5678/webhook/chot-dien-nuoc"
+N8N_WEBHOOK_URL_BILLS = "http://n8n:5678/n8n/webhook/chot-dien-nuoc"
 
 @router.post("/calculate", response_model=schemas.UtilityBillResponse)
 async def calculate_bill(
@@ -113,8 +113,7 @@ async def get_active_rooms(
     db: AsyncSession = Depends(get_db),
     current_admin=Depends(get_current_admin)
 ):
-    """Lấy danh sách các phòng đang có hợp đồng hoạt động để chốt điện nước."""
-    # Join Room & Contract & Tenant & User
+    """Lấy danh sách các phòng và trạng thái chốt điện trong tháng này."""
     query = (
         select(models.Room, models.Contract, models.Tenant, models.User)
         .join(models.Contract, models.Room.id == models.Contract.room_id)
@@ -126,16 +125,38 @@ async def get_active_rooms(
     result = await db.execute(query)
     rows = result.all()
     
+    import datetime
+    today = datetime.date.today()
+    current_month_str = f"{today.month}/{today.year}"
+    
     active_rooms = []
     for room, contract, tenant, user in rows:
-        # Lấy chỉ số cuối tháng trước từ UtilityBill gần nhất
+        # Kiểm tra xem tháng này đã có bill chưa
+        bill_res = await db.execute(
+            select(models.UtilityBill)
+            .where(
+                models.UtilityBill.room_id == room.id,
+                models.UtilityBill.thang_nam == current_month_str
+            )
+        )
+        current_bill = bill_res.scalar_one_or_none()
+            
         last_bill_res = await db.execute(
             select(models.UtilityBill)
             .where(models.UtilityBill.room_id == room.id)
             .order_by(models.UtilityBill.id.desc())
-            .limit(1)
+            .limit(2 if current_bill else 1)
         )
-        last_bill = last_bill_res.scalar_one_or_none()
+        bills = last_bill_res.scalars().all()
+        # Nếu đã có bill tháng này, lấy bill trước đó làm mốc "cũ"
+        last_bill = None
+        if current_bill:
+            for b in bills:
+                if b.id != current_bill.id:
+                    last_bill = b
+                    break
+        else:
+            last_bill = bills[0] if bills else None
         
         active_rooms.append(schemas.ActiveRoomBillingResponse(
             room_id=room.id,
@@ -145,7 +166,11 @@ async def get_active_rooms(
             so_nguoi=contract.so_nguoi,
             room_price=contract.gia_thue_chot,
             prev_electricity=last_bill.chi_so_dien_moi if last_bill else 0,
-            prev_water=last_bill.chi_so_nuoc_moi if last_bill else 0
+            prev_water=last_bill.chi_so_nuoc_moi if last_bill else 0,
+            is_completed=True if current_bill else False,
+            bill_id=current_bill.id if current_bill else None,
+            pdf_link=current_bill.pdf_link if current_bill else None,
+            current_total=current_bill.tong_tien if current_bill else None
         ))
     
     return active_rooms

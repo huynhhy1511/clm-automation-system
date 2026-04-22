@@ -121,6 +121,10 @@ class ActiveRoomBillingResponse(BaseModel):
     room_price: float
     prev_electricity: float
     prev_water: float
+    is_completed: bool = False
+    bill_id: Optional[int] = None
+    pdf_link: Optional[str] = None
+    current_total: Optional[float] = None
 
 class InvoiceSaveRequest(BaseModel):
     phong: str

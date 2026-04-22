@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import { Zap, Droplets, User, Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Zap, Droplets, User, Send, CheckCircle2, AlertCircle, Loader2, FileText, Camera, PlusCircle, X } from "lucide-react";
 import axios from "axios";
 
 type ActiveRoom = {
@@ -12,42 +12,42 @@ type ActiveRoom = {
   room_price: number;
   prev_electricity: number;
   prev_water: number;
+  is_completed: boolean;
+  bill_id?: number | null;
+  pdf_link?: string | null;
+  current_total?: number | null;
 };
 
-type RowData = {
+type RowState = {
   new_electricity: string;
-  new_water: string;
   submitting: boolean;
-  success: boolean;
+  showManual: boolean;
 };
 
-const ELEC_PRICE = 1000;
-const WATER_PRICE = 1000;
+const ELEC_PRICE = 3500;
 const N8N_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "http://localhost:5679/webhook/chot-dien-nuoc";
 
 export function BillingPage() {
   const [activeRooms, setActiveRooms] = useState<ActiveRoom[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<Record<number, RowData>>({});
+  const [rowStates, setRowStates] = useState<Record<number, RowState>>({});
 
   const fetchActiveRooms = async () => {
     try {
       const res = await api.get("/bills/active-rooms");
       setActiveRooms(res.data);
       
-      // Initialize row states
-      const initialRows: Record<number, RowData> = {};
+      const states: Record<number, RowState> = {};
       res.data.forEach((room: ActiveRoom) => {
-        initialRows[room.room_id] = {
+        states[room.room_id] = {
           new_electricity: "",
-          new_water: "",
           submitting: false,
-          success: false,
+          showManual: false,
         };
       });
-      setRows(initialRows);
+      setRowStates(states);
     } catch (err) {
-      console.error("Lỗi lấy danh sách phòng hoạt động", err);
+      console.error("Lỗi lấy danh sách phòng", err);
     } finally {
       setLoading(false);
     }
@@ -57,44 +57,32 @@ export function BillingPage() {
     fetchActiveRooms();
   }, []);
 
-  const handleInputChange = (roomId: number, field: keyof RowData, value: string) => {
-    setRows(prev => ({
+  const handleInputChange = (roomId: number, value: string) => {
+    setRowStates(prev => ({
       ...prev,
-      [roomId]: { ...prev[roomId], [field]: value, success: false }
+      [roomId]: { ...prev[roomId], new_electricity: value }
     }));
   };
 
-  const calculateTotal = (room: ActiveRoom) => {
-    const row = rows[room.room_id];
-    if (!row) return 0;
-
-    const newElec = parseFloat(row.new_electricity) || room.prev_electricity;
-    const newWater = parseFloat(row.new_water) || room.prev_water;
-
-    const elecBill = (newElec - room.prev_electricity) * ELEC_PRICE;
-    const waterBill = (newWater - room.prev_water) * WATER_PRICE;
-    
-    return Math.max(0, elecBill) + Math.max(0, waterBill) + room.room_price;
+  const toggleManual = (roomId: number) => {
+    setRowStates(prev => ({
+      ...prev,
+      [roomId]: { ...prev[roomId], showManual: !prev[roomId].showManual }
+    }));
   };
 
   const handleFinalize = async (room: ActiveRoom) => {
-    const row = rows[room.room_id];
-    const newElec = parseFloat(row.new_electricity);
-    const newWater = parseFloat(row.new_water);
+    const state = rowStates[room.room_id];
+    const newElec = parseFloat(state.new_electricity);
 
-    if (isNaN(newElec) || isNaN(newWater)) {
-      alert("Vui lòng nhập đầy đủ chỉ số mới.");
+    if (isNaN(newElec)) {
+      alert("Vui lòng nhập chỉ số điện mới.");
       return;
     }
 
-    if (newElec < room.prev_electricity || newWater < room.prev_water) {
-      alert("Chỉ số mới không được nhỏ hơn chỉ số cũ.");
-      return;
-    }
+    setRowStates(prev => ({ ...prev, [room.room_id]: { ...prev[room.room_id], submitting: true } }));
 
-    setRows(prev => ({ ...prev, [room.room_id]: { ...prev[room.room_id], submitting: true } }));
-
-    const totalAmount = calculateTotal(room);
+    const totalAmount = Math.max(0, (newElec - room.prev_electricity) * ELEC_PRICE) + room.room_price;
 
     const payload = {
       phong: room.ma_phong,
@@ -102,131 +90,144 @@ export function BillingPage() {
       email: room.tenant_email,
       chiSoDienCu: room.prev_electricity,
       chiSoDienMoi: newElec,
-      chiSoNuocCu: room.prev_water,
-      chiSoNuocMoi: newWater,
+      chiSoNuocCu: 0,
+      chiSoNuocMoi: 0,
       soDien: newElec - room.prev_electricity,
-      soNuoc: newWater - room.prev_water,
+      soNuoc: 0,
       tongTien: totalAmount,
       roomId: room.room_id,
       thangNam: new Date().toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })
     };
 
     try {
-      // Gửi TRỰC TIẾP sang n8n
       await axios.post(N8N_URL, payload);
-      
-      setRows(prev => ({ 
-        ...prev, 
-        [room.room_id]: { ...prev[room.room_id], submitting: false, success: true } 
-      }));
+      // Refresh after success
+      await fetchActiveRooms();
     } catch (err) {
       console.error("Lỗi gửi n8n", err);
-      alert("Gửi n8n thất bại. Vui lòng kiểm tra cấu hình Webhook.");
-      setRows(prev => ({ ...prev, [room.room_id]: { ...prev[room.room_id], submitting: false } }));
+      alert("Gửi n8n thất bại.");
+      setRowStates(prev => ({ ...prev, [room.room_id]: { ...prev[room.room_id], submitting: false } }));
     }
   };
 
   if (loading) return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-primary" size={48} /></div>;
 
+  const completedCount = activeRooms.filter(r => r.is_completed).length;
+  const pendingCount = activeRooms.length - completedCount;
+
   return (
-    <div className="w-full h-full p-4 overflow-auto">
-      <div className="flex justify-between items-center mb-10">
+    <div className="w-full h-full p-4 overflow-auto bg-slate-50/30">
+      <div className="flex justify-between items-end mb-8 px-2">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Chốt Điện Nước Hàng Tháng</h2>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Giám Sát Chốt Điện</h2>
           <p className="text-slate-500 mt-2 font-medium flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-emerald-500" /> Dashboard quản lý và gửi hóa đơn tự động qua n8n.
+             Hệ thống tự động đồng bộ từ Bot Telegram.
           </p>
+        </div>
+        <div className="flex gap-4">
+           <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 text-center">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đã Xong</div>
+              <div className="text-2xl font-black text-emerald-600">{completedCount}</div>
+           </div>
+           <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 text-center">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chờ Ảnh</div>
+              <div className="text-2xl font-black text-rose-500">{pendingCount}</div>
+           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/50 border-bottom border-slate-100">
-              <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider">Phòng & Khách</th>
-              <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider">Chỉ số Điện (kWh)</th>
-              <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider">Chỉ số Nước (m3)</th>
-              <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider">Số người & Giá phòng</th>
-              <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-right">Dự tính Tổng</th>
-              <th className="px-6 py-5 text-sm font-bold text-slate-500 uppercase tracking-wider text-center">Thao tác</th>
+            <tr className="bg-slate-50/50 border-b border-slate-100">
+              <th className="px-8 py-6 text-sm font-bold text-slate-500 uppercase tracking-wider">Phòng & Khách</th>
+              <th className="px-8 py-6 text-sm font-bold text-slate-500 uppercase tracking-wider">Trạng Thái AI</th>
+              <th className="px-8 py-6 text-sm font-bold text-slate-500 uppercase tracking-wider">Lịch sử cuối</th>
+              <th className="px-8 py-6 text-sm font-bold text-slate-500 uppercase tracking-wider text-right">Chi tiết tháng này</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {activeRooms.map((room) => {
-              const row = rows[room.room_id] || {};
-              const total = calculateTotal(room);
-              const isInvalid = (parseFloat(row.new_electricity) < room.prev_electricity) || (parseFloat(row.new_water) < room.prev_water);
-
+              const state = rowStates[room.room_id] || {};
+              
               return (
-                <tr key={room.room_id} className="hover:bg-slate-50/30 transition-colors group">
-                  <td className="px-6 py-6">
+                <tr key={room.room_id} className="hover:bg-slate-50/20 transition-colors group">
+                  <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${room.is_completed ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
                         <User size={24} />
                       </div>
                       <div>
                         <div className="font-black text-slate-800 text-lg">{room.ma_phong}</div>
-                        <div className="text-slate-500 text-sm font-medium">{room.tenant_name}</div>
+                        <div className="text-slate-500 text-xs font-bold">{room.tenant_name}</div>
                       </div>
                     </div>
                   </td>
                   
-                  <td className="px-6 py-6">
-                    <div className="flex flex-col gap-2">
-                      <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-widest"><Zap size={10} /> Cũ: <span className="text-slate-600 font-black">{room.prev_electricity}</span></div>
-                      <input 
-                        type="number" 
-                        placeholder="Số mới..."
-                        value={row.new_electricity}
-                        onChange={(e) => handleInputChange(room.room_id, 'new_electricity', e.target.value)}
-                        className={`w-32 px-3 py-2 bg-slate-50 border rounded-xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 ${isInvalid && parseFloat(row.new_electricity) < room.prev_electricity ? 'border-rose-300 ring-rose-100' : 'border-slate-200 focus:ring-primary/10 focus:border-primary'}`}
-                      />
-                    </div>
+                  <td className="px-8 py-6">
+                    {room.is_completed ? (
+                      <div className="flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50 w-fit px-4 py-2 rounded-xl border border-emerald-100">
+                        <CheckCircle2 size={18} /> Đã chốt AI
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-slate-400 font-bold bg-slate-50 w-fit px-4 py-2 rounded-xl border border-slate-100 italic">
+                        <Camera size={18} /> Chờ ảnh Tele...
+                      </div>
+                    )}
                   </td>
 
-                  <td className="px-6 py-6">
-                    <div className="flex flex-col gap-2">
-                      <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-widest"><Droplets size={10} /> Cũ: <span className="text-slate-600 font-black">{room.prev_water}</span></div>
-                      <input 
-                        type="number" 
-                        placeholder="Số mới..."
-                        value={row.new_water}
-                        onChange={(e) => handleInputChange(room.room_id, 'new_water', e.target.value)}
-                        className={`w-32 px-3 py-2 bg-slate-50 border rounded-xl focus:outline-none focus:ring-4 transition-all font-bold text-slate-700 ${isInvalid && parseFloat(row.new_water) < room.prev_water ? 'border-rose-300 ring-rose-100' : 'border-slate-200 focus:ring-primary/10 focus:border-primary'}`}
-                      />
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-6">
+                  <td className="px-8 py-6">
                     <div className="flex flex-col gap-1">
-                      <div className="text-sm font-bold text-slate-700">{room.so_nguoi} người</div>
-                      <div className="text-xs text-slate-500 font-medium">{room.room_price.toLocaleString()}đ base</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><Zap size={10} /> Số cũ: <span className="text-slate-700 font-black">{room.prev_electricity}</span></div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><Droplets size={10} /> Tiền nước: <span className="text-slate-700">Gộp/Phí</span></div>
                     </div>
                   </td>
 
-                  <td className="px-6 py-6 text-right">
-                    <div className="flex flex-col">
-                       <span className="text-2xl font-black text-slate-900">{total.toLocaleString()}đ</span>
-                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 self-end px-2 py-0.5 rounded-full mt-1 uppercase tracking-tighter">Tính theo chỉ số</span>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-6">
-                    <div className="flex justify-center">
-                      {row.success ? (
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 animate-in zoom-in-75 duration-300">
-                          <CheckCircle2 size={20} /> Đã gửi n8n
-                        </div>
-                      ) : (
-                        <button 
-                          onClick={() => handleFinalize(room)}
-                          disabled={row.submitting || isInvalid || !row.new_electricity || !row.new_water}
-                          className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 active:scale-95"
-                        >
-                          {row.submitting ? <Loader2 size={18} className="animate-spin" /> : <><Send size={18} /> Chốt & Gửi</>}
-                        </button>
-                      )}
-                    </div>
+                  <td className="px-8 py-6 text-right">
+                    {room.is_completed ? (
+                      <div className="flex flex-col items-end gap-2">
+                         <span className="text-2xl font-black text-slate-900">{room.current_total?.toLocaleString()}đ</span>
+                         <a 
+                           href={room.pdf_link || "#"} 
+                           target="_blank" 
+                           rel="noreferrer"
+                           className="flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-all"
+                         >
+                            <FileText size={12} /> XEM HÓA ĐƠN PDF
+                         </a>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-end gap-3">
+                        {state.showManual ? (
+                          <div className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-300">
+                            <input 
+                              type="number" 
+                              placeholder="Số điện mới..."
+                              value={state.new_electricity}
+                              onChange={(e) => handleInputChange(room.room_id, e.target.value)}
+                              className="w-28 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm font-bold"
+                            />
+                            <button 
+                              onClick={() => handleFinalize(room)}
+                              disabled={state.submitting || !state.new_electricity}
+                              className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-slate-800 transition-all disabled:opacity-20 active:scale-95"
+                            >
+                               {state.submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                            </button>
+                            <button onClick={() => toggleManual(room.room_id)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                               <X size={20} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => toggleManual(room.room_id)}
+                            className="text-[10px] font-bold text-slate-400 hover:text-primary transition-all flex items-center gap-1 group"
+                          >
+                            <PlusCircle size={14} className="group-hover:rotate-90 transition-transform" /> CHỐT TAY (DỰ PHÒNG)
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
@@ -235,11 +236,23 @@ export function BillingPage() {
         </table>
         
         {activeRooms.length === 0 && (
-          <div className="py-20 text-center">
-             <AlertCircle size={48} className="text-slate-200 mx-auto mb-4" />
-             <p className="text-slate-400 font-bold">Không tìm thấy phòng nào đang thuê để chốt hóa đơn.</p>
+          <div className="py-24 text-center">
+             <AlertCircle size={64} className="text-slate-200 mx-auto mb-6" />
+             <p className="text-slate-400 font-bold text-xl">Hiện chưa có phòng nào đang thuê.</p>
           </div>
         )}
+      </div>
+
+      <div className="mt-8 bg-amber-50 border border-amber-100 rounded-3xl p-6 flex gap-4 items-start">
+         <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shrink-0">
+            <AlertCircle size={20} />
+         </div>
+         <div>
+            <h4 className="font-black text-amber-800 uppercase tracking-wider text-sm mb-1">Hướng dẫn vận hành</h4>
+            <p className="text-amber-700 text-sm font-medium leading-relaxed">
+              Bạn chỉ cần chụp ảnh đồng hồ điện và gửi vào Telegram kèm Caption là mã phòng (VD: P101). AI sẽ tự động đọc số, tính tiền, tạo PDF hóa đơn và gửi Email cho khách hàng. Danh sách trên sẽ tự động cập nhật ngay khi AI xử lý xong.
+            </p>
+         </div>
       </div>
     </div>
   );
