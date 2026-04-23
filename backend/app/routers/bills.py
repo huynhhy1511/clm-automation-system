@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
-N8N_WEBHOOK_URL_BILLS = "http://n8n:5678/n8n/webhook/chot-dien-nuoc"
+N8N_WEBHOOK_URL_BILLS = "http://n8n:5678/webhook/chot-dien-nuoc"
 
 @router.post("/calculate", response_model=schemas.UtilityBillResponse)
 async def calculate_bill(

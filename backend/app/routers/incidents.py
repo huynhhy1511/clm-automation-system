@@ -8,7 +8,7 @@ from app.api.deps import get_current_user, get_current_admin
 
 router = APIRouter()
 
-N8N_WEBHOOK_URL_INCIDENT = "https://skewed-privatize-igloo.ngrok-free.dev/webhook/bao-cao-su-co"
+N8N_WEBHOOK_URL_INCIDENT = "http://n8n:5678/webhook/bao-cao-su-co"
 
 @router.post("/", response_model=schemas.IncidentResponse)
 async def create_incident(
