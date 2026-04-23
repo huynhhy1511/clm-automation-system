@@ -76,12 +76,13 @@ services:
     environment:
       - N8N_PROTOCOL=https
       - NODE_ENV=production
-      - N8N_BASE_URL=https://ezliving.id.vn/n8n/
+      - N8n_PORT=5678
+      - N8N_PATH=/n8n/
+      - N8N_BASE_URL=https://ezliving.id.vn/
       - WEBHOOK_URL=https://ezliving.id.vn/n8n/
       - N8N_EDITOR_BASE_URL=https://ezliving.id.vn/n8n/
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
-      - N8N_PATH=/n8n/
-      - N8N_PORT=5678
+      - N8N_LISTEN_ADDRESS=0.0.0.0
 
       # Cấu hình n8n sử dụng PostgreSQL làm DB chính
       - DB_TYPE=postgresdb
