@@ -1,9 +1,9 @@
-# 1. Tu dong keo code moi tu Git
-echo "Dang lay code moi tu Git..."
-git pull
+#!/bin/bash
 
-# 2. Cap nhat cấu hình Nginx
+# Script tu dong cap nhat Nginx va Docker cho ezliving.id.vn
+
 echo "Dang cap nhat cấu hình Nginx..."
+
 sudo tee /etc/nginx/sites-available/ezliving <<EOF
 server {
     listen 80;
@@ -53,12 +53,6 @@ server {
         proxy_buffering off;
     }
 
-    # FIX LỖI TRANG TRẮNG: Bắt các file assets n8n gọi từ root
-    location ~* ^/(assets|n8nassets|n8nstatic|n8nfavicon) {
-        proxy_pass http://localhost:5679;
-        proxy_set_header Host \$host;
-    }
-
     location = /n8n {
         return 301 \$scheme://\$host/n8n/;
     }
@@ -68,8 +62,7 @@ EOF
 echo "Dang kiem tra va khoi dong lai Nginx..."
 sudo nginx -t && sudo systemctl restart nginx
 
-# 3. Build va khoi dong lai Docker
-echo "Dang build va khoi dong lai Docker containers..."
-docker compose up -d --build
+echo "Dang khoi dong lai n8n (ép nạp lại cấu hình)..."
+docker compose up -d --force-recreate n8n
 
-echo "Hoan tat! Hay thu truy cap: https://ezliving.id.vn/n8n/"
+echo "Hoan tat! Hay thu truy cap https://ezliving.id.vn/n8n/"
