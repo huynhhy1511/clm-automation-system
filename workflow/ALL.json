@@ -1,0 +1,2008 @@
+{
+  "name": "CLM WORKLOW 6",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tao-hop-dong",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook (FastAPI gọi)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1712,
+        144
+      ],
+      "id": "77e67e0e-1162-4ae6-9c1b-db28dddaf648",
+      "webhookId": "ebd87cc6-0073-4bdc-9cb7-33a033926153"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d = $input.item.json.body;\n\n// Hàm format số tiền thành chuẩn VN\nconst fmt = (n) => {\n    if (!n) return '....................';\n    return new Intl.NumberFormat('vi-VN').format(n);\n};\n\nd.giaThueFormatted = fmt(d.giaThue);\n\n// TÍNH TIỀN & TẠO QR\nconst tienPhaiDong = Number(d.giaThue || 0);\nd.tienPhaiDongFormatted = fmt(tienPhaiDong);\n\n// ƯU TIÊN DÙNG CHUỖI VIETQR ĐỂ QUÉT BẰNG APP NGÂN HÀNG\nif (d.payosQr) {\n    d.qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(d.payosQr)}`;\n} else if (d.payosUrl) {\n    d.qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(d.payosUrl)}`;\n} else {\n    d.qrUrl = 'https://payos.vn/error';\n}\n\n\n// Lấy ngày tháng năm hiện tại\nconst today = new Date();\nconst day = String(today.getDate()).padStart(2, '0');\nconst month = String(today.getMonth() + 1).padStart(2, '0');\nconst year = today.getFullYear();\n\nd.soThangText = (d.soThang || 12) + ' tháng';\n\n// Khung HTML giữ nguyên format MS Word của ông, chỉ bỏ dòng Tiền cọc\nd.htmlContract = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  * { box-sizing: border-box; }\n  body { \n    font-family: \"Times New Roman\", Times, serif; \n    font-size: 14pt; \n    line-height: 1.3; \n    margin: 40px; \n    color: #000; \n  }\n  \n  /* Các class tiện ích */\n  .center { text-align: center !important; }\n  .right { text-align: right !important; }\n  .bold { font-weight: bold; }\n  .italic { font-style: italic; }\n  .uppercase { text-transform: uppercase; }\n  .underline { text-decoration: underline; }\n\n  /* FIX LỖI GIÃN CHỮ: Chuyển mặc định về căn trái, chỉ justify đoạn văn dài */\n  .justify-text { text-align: justify; } \n  \n  h1 { font-size: 14pt; margin: 0; padding: 0; }\n  h2 { font-size: 16pt; margin: 20px 0 15px 0; padding: 0; }\n  \n  /* Ép tất cả thẻ p căn trái để không bị kéo giãn chữ */\n  p { margin: 6px 0; text-align: left; } \n\n  .indent { padding-left: 20px; }\n  .indent-more { padding-left: 40px; }\n\n  /* CSS CHO PHẦN CHỮ KÝ */\n  .signatures { display: flex; justify-content: space-between; margin-top: 40px; }\n  .sig-box { width: 45%; text-align: center; }\n  .spacing-bottom { margin-bottom: 10px; }\n  \n  /* STYLE CHỮ KÝ VIẾT TAY (Mực xanh, nghiêng, đổ bóng nhẹ) */\n  .handwritten {\n    font-family: \"Brush Script MT\", \"Lucida Handwriting\", cursive;\n    font-size: 30pt;\n    color: #1e3a8a; \n    display: block;\n    transform: rotate(-4deg);\n    margin: 15px 0;\n    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);\n  }\n  /* STYLE CON DẤU XÁC THỰC (Mực đỏ mộc) */\n  .admin-seal {\n    color: #dc2626;\n    font-size: 10pt;\n    font-weight: bold;\n    border: 2px solid #dc2626;\n    padding: 3px 8px;\n    display: inline-block;\n    border-radius: 4px;\n    transform: rotate(8deg);\n    margin-bottom: -10px;\n  }\n</style>\n</head>\n<body>\n  <div class=\"center\">\n    <h1 class=\"bold uppercase\">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h1>\n    <p class=\"bold underline center\">Độc lập – Tự do – Hạnh phúc</p>\n  </div>\n\n  <h2 class=\"center bold uppercase\">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h2>\n  <div class=\"indent\">\n    <p>Hôm nay, ngày ${day} tháng ${month} năm ${year}; tại địa chỉ: ..........................</p>\n    <p>Chúng tôi gồm:..........................................................................</p>\n  </div>\n  <p class=\"bold\">1. Đại diện bên cho thuê phòng trọ (Bên A):</p>\n  <div class=\"indent\">\n      <p>Ông/bà: <b>Huỳnh Ngọc Huy</b> <span style=\"float:right\">Sinh ngày: ....................................</span></p>\n      <p>Nơi đăng ký HK:......................................................................................................................</p>\n      <p>CMND/CCCD số: .................................... cấp ngày .......................... tại: ...................................................</p>\n      <p>Số điện thoại: .......................................................................</p>\n  </div>\n\n  <p class=\"bold\" style=\"margin-top: 10px;\">2. Bên thuê phòng trọ (Bên B):</p>\n  <div class=\"indent\">\n      <p>Ông/bà: <b>${d.hoTen || '........................................'}</b> <span style=\"float:right\">Sinh ngày: ${d.ngaySinh || '....................................'}</span></p>\n      <p>Nơi đăng ký HK thường trú: ${d.thuongTru || '...................................................................................................'}</p>\n      <p>Số CMND/CCCD: <b>${d.soCccd || '....................................'}</b> cấp ngày: ${d.ngayCap || '....................'} tại: ${d.noiCap || '....................'}</p>\n      <p>Số điện thoại: <b>${d.sdt || '................................................'}</b></p>\n  </div>\n\n  <div class=\"indent\" style=\"margin-top: 15px;\">\n      <p class=\"justify-text\">Sau khi bàn bạc trên tinh thần dân chủ, hai bên cùng có lợi, cùng thống nhất như sau:</p>\n      <p class=\"justify-text\">Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ................................................................................</p>\n      \n      <div class=\"indent\">\n          <p>- Phòng số: <b>${d.phong || '...........'}</b></p>\n          <p>- Giá thuê: <b>${d.giaThueFormatted} đ/tháng</b></p>\n          <p>- Hình thức thanh toán: ....................................................................................................................</p>\n          <p>- Tiền điện: 3.500 đ/kwh tính theo chỉ số công tơ, thanh toán vào cuối các tháng.</p>\n          <p>- Tiền nước: 100.000 đ/người thanh toán vào đầu các tháng.</p>\n          <p>- Thời hạn thuê: <b>${d.soThangText}</b>, bắt đầu tính tiền từ ngày: <b>${d.ngayBatDau || '....................'}</b></p>\n      </div>\n  </div>\n\n  <p class=\"bold uppercase underline\" style=\"margin-top: 20px;\">TRÁCH NHIỆM CỦA CÁC BÊN</p>\n\n  <p class=\"bold\">* Trách nhiệm của bên A:</p>\n  <div class=\"indent\">\n      <p class=\"justify-text\">- Tạo mọi điều kiện thuận lợi để bên B thực hiện theo hợp đồng.</p>\n      <p class=\"justify-text\">- Cung cấp nguồn điện, nước, wifi cho bên B sử dụng.</p>\n  </div>\n\n  <p class=\"bold\" style=\"margin-top: 10px;\">* Trách nhiệm của bên B:</p>\n  <div class=\"indent\">\n      <p class=\"justify-text\">- Thanh toán đầy đủ các khoản tiền theo đúng thỏa thuận.</p>\n      <p class=\"justify-text\">- Bảo quản các trang thiết bị và cơ sở vật chất của bên A trang bị cho ban đầu (làm hỏng phải sửa, mất phải đền).</p>\n      <p class=\"justify-text\">- Không được tự ý sửa chữa, cải tạo cơ sở vật chất khi chưa được sự đồng ý của bên A.</p>\n      <p class=\"justify-text\">- Giữ gìn vệ sinh trong và ngoài khuôn viên của phòng trọ.</p>\n      <p class=\"justify-text\">- Bên B phải chấp hành mọi quy định của pháp luật Nhà nước và quy định của địa phương.</p>\n      <p class=\"justify-text\">- Nếu bên B cho khách ở qua đêm thì phải báo và được sự đồng ý của chủ nhà đồng thời phải chịu trách nhiệm về các hành vi vi phạm pháp luật của khách trong thời gian ở lại.</p>\n  </div>\n\n  <p class=\"bold uppercase underline\" style=\"margin-top: 20px;\">TRÁCH NHIỆM CHUNG</p>\n  <div class=\"indent\">\n      <p class=\"justify-text\">- Hai bên phải tạo điều kiện cho nhau thực hiện hợp đồng.</p>\n      <p class=\"justify-text\">- Trong thời gian hợp đồng còn hiệu lực nếu bên nào vi phạm các điều khoản đã thỏa thuận thì bên còn lại có quyền đơn phương chấm dứt hợp đồng; nếu sự vi phạm hợp đồng đó gây tổn thất cho bên bị vi phạm hợp đồng thì bên vi phạm hợp đồng phải bồi thường thiệt hại.</p>\n      <p class=\"justify-text\">- Một trong hai bên muốn chấm dứt hợp đồng trước thời hạn thì phải báo trước cho bên kia ít nhất 30 ngày và hai bên phải có sự thống nhất.</p>\n      <p class=\"justify-text\">- Bên nào vi phạm điều khoản chung thì phải chịu trách nhiệm trước pháp luật.</p>\n      <p class=\"justify-text\">- Hợp đồng được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ một bản.</p>\n  </div>\n\n  <div class=\"signatures\">\n      <div class=\"sig-box\">\n          <p class=\"bold center\">ĐẠI DIỆN BÊN B</p>\n          <p class=\"italic spacing-bottom center\">(Ký, ghi rõ họ tên)</p>\n          <span class=\"handwritten\">${d.hoTen || ''}</span>\n          <p class=\"bold center\">${d.hoTen || ''}</p>\n      </div>\n      <div class=\"sig-box\">\n          <p class=\"bold center\">ĐẠI DIỆN BÊN A</p>\n          <p class=\"italic spacing-bottom center\">(Ký, ghi rõ họ tên)</p>\n          <div class=\"center\"><span class=\"admin-seal\">ĐÃ XÁC THỰC</span></div>\n          <span class=\"handwritten\">Huy Huỳnh</span>\n          <p class=\"bold center\">Huỳnh Ngọc Huy</p>\n      </div>\n  </div>\n</body>\n</html>`;\n\nreturn d;"
+      },
+      "name": "Format & Tạo HTML Hợp Đồng",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        144
+      ],
+      "id": "58386121-8be2-4838-ae28-ded45b80343d"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Lấy chuỗi HTML từ Node tạo hợp đồng\nconst htmlContent = $json.htmlContract;\n\n// 2. Ép nó thành Buffer chuẩn của Node.js\nconst buffer = Buffer.from(htmlContent, 'utf-8');\n\n// 3. Đóng gói thành file binary an toàn tuyệt đối bằng hàm prepareBinaryData\nconst binaryData = await this.helpers.prepareBinaryData(\n  buffer, \n  'index.html', \n  'text/html'\n);\n\n// 4. Truyền đi tiếp\nreturn {\n  json: $json,\n  binary: {\n    indexHtml: binaryData\n  }\n};"
+      },
+      "name": "HTML String → Binary File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1328,
+        144
+      ],
+      "id": "d87603a6-68a7-4a71-a6c8-f4bc193c2656"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://gotenberg:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "indexHtml"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Gotenberg: HTML → PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -1104,
+        144
+      ],
+      "id": "f2812572-1c32-4d7e-a53c-fe3479c45296"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Chỉ định ĐÍCH DANH tên gói hàng mà Gotenberg trả về (mặc định là 'data')\nconst binaryKey = 'data';\n\n// Kiểm tra xem Gotenberg có thực sự nhả file vào đây chưa\nif (!$input.item.binary || !$input.item.binary[binaryKey]) {\n  throw new Error(\"Gotenberg chưa trả file về biến 'data'. Hãy kiểm tra Node Gotenberg (Response Format phải là File).\");\n}\n\n// 2. Lấy bộ đệm (Buffer) của ĐÚNG file PDF đó\nconst pdfBuffer = await this.helpers.getBinaryDataBuffer(0, binaryKey);\n\n// 3. Kiểm tra chéo xem có phải PDF xịn không\nconst pdfBase64 = pdfBuffer.toString('base64');\nif (!pdfBase64.startsWith('JVBERi0')) {\n    const errorText = pdfBuffer.toString('utf-8');\n    throw new Error(\"Lỗi bốc nhầm file hoặc file hỏng: \" + errorText.substring(0, 100));\n}\n\n// 4. Lấy lại thông tin khách hàng từ Node tạo hợp đồng\nconst prevData = $('Format & Tạo HTML Hợp Đồng').item.json;\n\n// 5. Đóng gói file PDF hoàn hảo\nconst fileName = `Hop_Dong_Phong_${prevData.phong || 'X'}.pdf`;\nconst cleanPdfBinary = await this.helpers.prepareBinaryData(\n  pdfBuffer, \n  fileName, \n  'application/pdf'\n);\n\n// 6. Xóa bỏ file HTML cũ đi cho nhẹ máy, chỉ truyền PDF đi tiếp\nreturn {\n  json: {\n    ...prevData,\n    pdfBase64: pdfBase64\n  },\n  binary: {\n    data: cleanPdfBinary\n  }\n};"
+      },
+      "name": "Lấy PDF Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        144
+      ],
+      "id": "0d0876b3-aab2-4121-9b79-16597ab1f383"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/contracts/save-pdf",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contract_id",
+              "value": "={{ $json.contractId }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Lưu PDF vào Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -704,
+        144
+      ],
+      "id": "22eb6a4a-e74e-42b2-b68c-53b9bd7c72f8"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}",
+        "subject": "=🎉 Hợp đồng thuê phòng {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }} ",
+        "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'>\n  <div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'>\n    <h2 style='color:white;margin:0'>🏠 Hợp đồng thuê phòng P.{{ $json.phong }}</h2>\n  </div>\n  <div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'>\n    <p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p>\n    <p>Yêu cầu thuê phòng của bạn đã được duyệt. Vui lòng kiểm tra <b>File PDF hợp đồng điện tử đính kèm</b> (đã có chữ ký của chủ nhà).</p>\n    \n    <div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;text-align:center;'>\n      <b style='color:#dc2626;font-size:18px;'>THANH TOÁN ĐỂ HOÀN TẤT NHẬN PHÒNG</b><br>\n      <p>Tổng tiền cần đóng (Tháng đầu tiên): <b style='font-size:20px;'>{{ $json.tienPhaiDongFormatted }} đ</b></p>\n      <img src=\"{{ $json.qrUrl }}\" width=\"250\" style=\"border: 2px solid #1e40af; border-radius: 8px; margin-top: 10px;\">\n      <p style='font-size: 13px; color: #64748b;'>Quét mã QR để thanh toán. Hệ thống sẽ tự động bàn giao phòng & gửi tài khoản cho bạn sau khi nhận được tiền.</p>\n    </div>\n  </div>\n</div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "name": "Gửi Mail + PDF Hợp Đồng",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        144
+      ],
+      "id": "e6d02e47-581a-4c7f-bd38-aef147881024",
+      "webhookId": "90d7d525-f661-42a5-b1c9-b64189d15bcd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1003790123986",
+        "text": "=✅ Xử lý hợp đồng xong!\n👤 {{ $('Format & Tạo HTML Hợp Đồng').item.json.hoTen }}\n🏠 Phòng: {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }}\n📧 Email + PDF gửi tới: {{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}\n💾 PDF đã lưu DB (Contract #{{ $('Format & Tạo HTML Hợp Đồng').item.json.contractId }})",
+        "additionalFields": {}
+      },
+      "name": "Báo cáo Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        144
+      ],
+      "id": "5d29eebb-8722-4909-8630-e4df6446400a",
+      "webhookId": "03caecf4-5f9f-4641-8ec4-ea986b4ee60e",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"success\", \"message\": \"PDF lưu DB và Email đã gửi!\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8342327e-8fe8-4e53-b806-0ed481454721",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Lấy toàn bộ dữ liệu khách hàng (JSON) từ node Lấy PDF Base64\nconst fullData = $('Lấy PDF Base64').item.json;\n\n// 2. Lấy file PDF (Binary) cũng từ node Lấy PDF Base64 luôn\n// Vì node \"Lưu PDF vào Database\" ngay phía trước đã làm mất binary rồi\nconst pdfFile = $('Lấy PDF Base64').item.binary.data;\n\nreturn {\n  json: fullData,\n  binary: {\n    data: pdfFile\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        144
+      ],
+      "id": "05d2dd74-6b31-4f84-affe-a82ecf9e7e0b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.email }}",
+        "subject": "={{ '🔑 Bàn giao phòng ' + $json.phong + ' & Tài khoản hệ thống' }}",
+        "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'><div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'><h2 style='color:white;margin:0'>🏠 Chúc mừng bạn đã nhận phòng!</h2></div><div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'><p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p><p>Phòng <b>{{ $json.phong }}</b> của bạn đã được bàn giao thành công. Chúc bạn có những trải nghiệm tuyệt vời tại đây.</p><div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0'><b style='color:#1e40af'>📋 Thông tin tiện ích</b><br><br>📶 Wifi: <b>CLM_Network_5G</b><br>🔓 Mật khẩu Wifi: <b>68686868</b><br>📝 Quý khách nhớ đọc kỹ Nội quy phòng trọ đính kèm trên Website để tránh bị phạt nhé!</div><div style='background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:16px;margin:16px 0'><b style='color:#854d0e'>🔑 Tài khoản đăng nhập App</b><br><br>🌐 Website: <a href='http://localhost:3000'>http://localhost:3000</a><br>📧 Email: <b>{{ $json.tenDangNhap }}</b><br>🔒 Mật khẩu: <code style='background:#fff;padding:2px 8px;border-radius:4px'>{{ $json.matKhau }}</code><br><small style='color:#dc2626'>⚠️ Vui lòng đổi mật khẩu ngay sau lần đăng nhập đầu tiên!</small></div><p style='color:#64748b;font-size:12px;margin-top:20px'>Trân trọng,<br><b>Ban Quản Lý CLM</b></p></div></div>",
+        "options": {}
+      },
+      "id": "def86864-8ff6-44f0-9153-3ca7f0afdf39",
+      "name": "Mail: Cấp Account",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1056,
+        736
+      ],
+      "webhookId": "a8f3143d-fdd5-4959-848d-5f51135ef65b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ban-giao-phong",
+        "options": {}
+      },
+      "id": "e920248d-2a38-43fe-aaca-771b32ec7ef9",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        576
+      ],
+      "webhookId": "ef46ae75-e507-4e18-8358-e513520748c6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.item.json.body || $input.item.json;\n\nfunction cleanB64(s) { \n  return (s && s.includes(',')) ? s.split(',')[1] : s; \n}\n\nconst binaryData = {};\n\nif (d.cccdTruoc) {\n  binaryData.cccdTruoc = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(d.cccdTruoc), 'base64'),\n    `CCCD_Truoc_P${d.phong}.jpg`,\n    'image/jpeg'\n  );\n}\n\nif (d.cccdSau) {\n  binaryData.cccdSau = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(d.cccdSau), 'base64'),\n    `CCCD_Sau_P${d.phong}.jpg`,\n    'image/jpeg'\n  );\n}\n\nif (d.pdfBase64) {\n  binaryData.pdfFile = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(d.pdfBase64), 'base64'),\n    `HopDong_P${d.phong}.pdf`,\n    'application/pdf'\n  );\n}\n\nreturn { json: d, binary: binaryData };"
+      },
+      "id": "abb45a93-6f4d-478d-accb-08fe78450717",
+      "name": "Xử lý Base64 sang File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "-1003790123986",
+        "text": "=✅ BÀN GIAO PHÒNG MỚI:\n🏠 Phòng: {{ $json.body.phong }}\n👤 Khách: {{ $json.body.hoTen }}\n📞 SĐT: {{ $json.body.sdt }}\n🤖 Bot đang gửi hồ sơ đính kèm...",
+        "additionalFields": {}
+      },
+      "id": "8c40fa1a-24a7-4619-ae54-912c4e88c2e5",
+      "name": "Tele: Báo cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        384
+      ],
+      "webhookId": "b41e53f9-b1fc-4b8d-8b87-a1e06f38e1be",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "-1003790123986",
+        "binaryData": true,
+        "binaryPropertyName": "cccdTruoc",
+        "additionalFields": {}
+      },
+      "id": "24996fe1-8164-4d50-a695-d41fad1a0b4a",
+      "name": "Tele: CCCD Trước",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        480
+      ],
+      "webhookId": "75f0aec1-7e61-442d-9bfb-a586065c7035",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "-1003790123986",
+        "binaryData": true,
+        "binaryPropertyName": "cccdSau",
+        "additionalFields": {}
+      },
+      "id": "3b53ebb2-6a34-457b-aa62-c439a02e0b73",
+      "name": "Tele: CCCD Sau",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        576
+      ],
+      "webhookId": "30b08400-5fee-4a17-8b9a-84a60058f4cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "-1003790123986",
+        "binaryData": true,
+        "binaryPropertyName": "pdfFile",
+        "additionalFields": {}
+      },
+      "id": "bdabf4a3-a3ae-4f92-9592-45f1f07c132d",
+      "name": "Tele: PDF Hợp Đồng",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        672
+      ],
+      "webhookId": "4a120dbe-564a-43de-bb1c-57d78afe7dad",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.ma_phong AS phong, '{{ $json.chiSoDienMoi }}'::numeric AS \"chiSoDienMoi\", 'AI_OCR_ADMIN' AS nguon, c.gia_thue_chot AS \"tienPhong\", t.ho_ten AS \"hoTen\", t.email AS \"email\", COALESCE((SELECT chi_so_dien_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1), 0) AS \"chiSoDienCu\", COALESCE((SELECT chi_so_nuoc_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1), 0) AS \"chiSoNuocCu\" FROM rooms r JOIN contracts c ON r.id = c.room_id JOIN tenants t ON c.tenant_id = t.id WHERE r.ma_phong = '{{ $json.phong }}' AND c.trang_thai = 'Hiệu lực' LIMIT 1;",
+        "options": {}
+      },
+      "id": "38c8384f-ddd3-453b-91d8-718e6396df6a",
+      "name": "Lấy Tiền Nhà & Điện Cũ",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1104,
+        1376
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true,
+          "userIds": "7035265746"
+        }
+      },
+      "id": "73f1e12c-9825-449e-bcd6-6ac9cd4b504e",
+      "name": "gửi ảnh Telegram",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1744,
+        1376
+      ],
+      "webhookId": "6769407f-6c79-4724-b5e4-8720e19d92d1",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  // Lấy dữ liệu từ OCR\n  const parsedResults = $json.ParsedResults;\n  if (!parsedResults || parsedResults.length === 0) throw new Error(\"OCR không đọc được chữ nào từ ảnh!\");\n  \n  const ocrText = parsedResults[0].ParsedText;\n  \n  // Lấy Caption từ tin nhắn Telegram\n  const caption = $('gửi ảnh Telegram').item.json.message.caption || '';\n  \n  // Regex mới: Chấp nhận cả \"P101\", \"Phòng 101\" hoặc chỉ nhắn mỗi \"101\"\n  const matchPhong = caption.match(/(?:P|#|Phòng\\s*)?(\\d{3,4})/i);\n  const phong = matchPhong ? matchPhong[1] : '???';\n  \n  if (phong === '???') throw new Error(\"Lỗi: Bạn chưa ghi mã phòng ở phần Caption (ví dụ: P101)\");\n\n  // Tìm số lớn nhất trong ảnh (thường là chỉ số điện mới)\n  const numbers = ocrText.match(/\\d+/g);\n  let chiSoMoi = 0;\n  if (numbers && numbers.length > 0) {\n    chiSoMoi = Math.max(...numbers.map(Number)); \n  }\n\n  return {\n    json: {\n      phong: phong,\n      chiSoDienMoi: chiSoMoi,\n      nguon: \"AI_OCR_ADMIN\"\n    }\n  };\n} catch (error) {\n  throw new Error(error.message);\n}\n"
+      },
+      "id": "3edc9f56-3643-426f-98a1-622810adc2f1",
+      "name": "Bóc tách Dữ liệu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1344,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "K82400552388957"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6320b3fc-c566-4d7d-b85c-24654ffaecc1",
+      "name": "AI Đọc Số (OCR.Space)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1536,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "is_auto",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ae35e9f-2912-41bc-80ff-fe5f56a67d65",
+      "name": "Manual: Set Flag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chot-dien-nuoc",
+        "options": {}
+      },
+      "id": "e275fd5e-5659-4bda-8a22-fea0f7563e3d",
+      "name": "Webhook (Chốt tay)1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        1168
+      ],
+      "webhookId": "9180ca77-47a2-4ed4-a712-acfa9b297ebe"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "-1003790123986",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=🚀 [BÁO CÁO HÓA ĐƠN GỘP]\n🏠 Phòng: {{ $('2. Tính Toán & VietQR').item.json.phong }}\n💸 Tổng tiền: {{ $('2. Tính Toán & VietQR').item.json.txt_tong }}\n✅ Trạng thái: Hoàn tất chốt sổ."
+        }
+      },
+      "id": "ed15e5bb-ff7d-45a6-b4a6-ff88009ef083",
+      "name": "7. Tele: Báo cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        1328
+      ],
+      "webhookId": "361d59f0-62c5-4a54-9f57-1f8e4f7df4d7",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/bills/save",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phong",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.phong }}"
+            },
+            {
+              "name": "tong_tien",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.val_tong }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            },
+            {
+              "name": "qr_url",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.qrUrl }}"
+            },
+            {
+              "name": "thang_nam",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}"
+            },
+            {
+              "name": "chi_so_dien_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_moi }}"
+            },
+            {
+              "name": "chi_so_dien_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_moi }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "45c2ac18-7616-425e-9e2b-7a3c4f59615a",
+      "name": "6. Lưu Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        560,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst info = $('2. Tính Toán & VietQR').item.json;\n\nreturn {\n  json: { ...info, pdfBase64 },\n  binary: {\n    data: await this.helpers.prepareBinaryData(fileBuffer, `HoaDon_P${info.phong}.pdf`, 'application/pdf')\n  }\n};"
+      },
+      "id": "5f570f93-4b7f-4c6a-9fc6-ae1228f7d53d",
+      "name": "5. Đóng gói PDF & Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "063e7726-3cc8-4b78-b082-1770a21b943e",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://gotenberg:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "indexHtml"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55b5f70c-6c72-40d8-bc74-a9e43ac25822",
+      "name": "4. Gotenberg (PDF)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -144,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\nconst html = `<html><body><h2>Hóa đơn P.${d.phong}</h2><p>Tổng: ${d.txt_tong}</p></body></html>`;\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
+      },
+      "id": "ad980ef7-278b-4ca2-844b-81c9e0ea2d87",
+      "name": "3. Dàn trang HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst isAI = input.nguon === \"AI_OCR_ADMIN\";\n\nfunction getV(key) {\n    if (input[key] !== undefined && input[key] !== null) return input[key];\n    if (input.body && input.body[key] !== undefined) return input.body[key];\n    return 0; \n}\n\nconst phong = getV('phong') || getV('ma_phong') || \"?\";\nconst hoTen = getV('hoTen') || getV('ho_ten') || \"Khách hàng\";\nconst email = getV('email') || \"clm@example.com\";\n\nconst today = new Date();\nconst thangNam = getV('thangNam') || getV('thang_nam') || `${today.getMonth() + 1}/${today.getFullYear()}`;\n\nlet baseRent = Number(getV('tienPhong') || getV('tien_phong') || 0);\nlet tongTuReact = Number(getV('tongTien') || getV('tong_tien') || 0);\n\nlet val_dien = 0;\nlet val_nuoc = 0;\nlet finalTotal = 0;\n\nif (tongTuReact > 0 && !isAI) {\n    baseRent = tongTuReact;\n    finalTotal = tongTuReact;\n} else {\n    const sd = Number(getV('chiSoDienMoi')) - Number(getV('chiSoDienCu'));\n    const sn = Number(getV('chiSoNuocMoi')) - Number(getV('chiSoNuocCu'));\n\n    val_dien = Math.max(0, sd * 3500); \n    val_nuoc = Math.max(0, sn * 100000); \n\n    finalTotal = baseRent + val_dien + val_nuoc;\n}\n\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\nreturn {\n    json: {\n        ...input, \n        phong, hoTen, email,\n        is_auto: false,\n        val_phong: baseRent,\n        val_tong: finalTotal,\n        txt_phong: fmt(baseRent),\n        txt_tong: fmt(finalTotal),\n        thangDisplay: thangNam,\n        qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${finalTotal}&addInfo=ThanhToan_P${phong}&accountName=HUYNH%20NGOC%20HUY`,\n        chi_so_dien_cu: Number(getV('chiSoDienCu')),\n        chi_so_dien_moi: Number(getV('chiSoDienMoi')),\n        chi_so_nuoc_cu: Number(getV('chiSoNuocCu')),\n        chi_so_nuoc_moi: Number(getV('chiSoNuocMoi'))\n    }\n};"
+      },
+      "id": "787b22d1-fce4-4c76-bc54-1d9a3f89829b",
+      "name": "2. Tính Toán & VietQR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('2. Tính Toán & VietQR').item.json.email }}",
+        "subject": "=Hóa đơn tiền nhà P.{{ $('2. Tính Toán & VietQR').item.json.phong }} - Tháng {{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}",
+        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN P.{{ $('2. Tính Toán & VietQR').item.json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $('2. Tính Toán & VietQR').item.json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ <strong>{{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}</strong>, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_phong }}</li>\n      <li><b>Điện & Nước:</b> Tính theo thực tế (Đã gộp)</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $('2. Tính Toán & VietQR').item.json.txt_tong }}</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số và QR thanh toán, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "id": "07d204a5-64eb-4651-925e-872f657af9e1",
+      "name": "Gửi Mail Hóa Đơn",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        1168
+      ],
+      "webhookId": "73f26785-48d8-4bd3-ab1f-6a0959b8b773",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/payments/payos-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "210f842a-3c7e-4b4a-9203-94c0002d36b1",
+      "name": "Webhook PayOS",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1120,
+        96
+      ],
+      "webhookId": "9c15f1bc-1377-48a2-8ba5-610be6fea57d"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const payloadData = $input.item.json.body.data;\nconst signature = $input.item.json.body.signature;\n\nif (!payloadData || !signature) return { valid: false, signData: \"\", originalSignature: \"\" };\n\nconst sortedKeys = Object.keys(payloadData).sort();\nconst signDataArr = [];\nfor(const k of sortedKeys) {\n    if(payloadData[k] !== undefined && payloadData[k] !== null && typeof payloadData[k] !== 'object' && typeof payloadData[k] !== 'array') {\n        signDataArr.push(`${k}=${payloadData[k]}`);\n    }\n}\nconst signData = signDataArr.join('&');\n\nreturn {\n  signData: signData,\n  originalSignature: signature,\n  bodyData: payloadData\n};"
+      },
+      "id": "bfa2b09a-00dc-4110-b0c5-35fcfe88d6d8",
+      "name": "Tạo chuỗi xác thực",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "value": "={{ $json.signData }}",
+        "dataPropertyName": "signData",
+        "secret": "f15b091c09fba77e9912ffa25edcf3b4a58eb771ebf9d244547f626ba000e503"
+      },
+      "id": "876540eb-e3e9-4233-94cc-46c0ba6fd845",
+      "name": "Tính toán HMAC",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data }}",
+              "value2": "={{ $json.originalSignature }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7f1fd967-617a-42db-a7a6-6792f714aca3",
+      "name": "Kiểm tra Chữ ký HMAC",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1776,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Sai chữ ký bảo mật (Invalid Signature)\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "e9fdfb08-ef71-4da8-9f07-dea3c2e04cfa",
+      "name": "Từ chối Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1984,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $('Tạo chuỗi xác thực').item.json.bodyData;\nconst description = data.description || \"\";\n\n// Lấy phần mã phòng sau dấu gạch dưới (VD: ThanhToan_P101 -> P101)\n// Nếu không có gạch dưới thì lấy 4 ký tự cuối (VD: P101)\nconst maPhong = description.includes('_') ? description.split('_').pop().toUpperCase() : description.slice(-4).toUpperCase();\n\nreturn {\n  ma_phong: maPhong,\n  tong_tien_bill: data.amount\n};"
+      },
+      "id": "d287a3da-bb0c-4a60-8656-cb7adf435466",
+      "name": "Trích xuất dữ liệu thanh toán PayOS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    u.id AS bill_id,\n    r.ma_phong, \n    u.thang_nam, \n    u.tong_tien, \n    t.ho_ten, \n    t.email\nFROM rooms r\nJOIN utility_bills u ON r.id = u.room_id\nJOIN contracts c ON r.id = c.room_id\nJOIN tenants t ON c.tenant_id = t.id\nWHERE r.ma_phong = '{{ $('Trích xuất dữ liệu thanh toán PayOS').item.json.ma_phong }}'\n  AND u.trang_thai = 'Chưa thanh toán'\nORDER BY u.id DESC\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "ffab67ae-7f47-4887-858b-84ddbe9b1135",
+      "name": "Lấy thông tin hợp đồng",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2224,
+        -16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f5033f2c-62bd-4d17-b162-52aedd7915f4",
+              "leftValue": "={{ $('Lấy thông tin hợp đồng').item.json.tong_tien }}",
+              "rightValue": "={{ $('Trích xuất dữ liệu thanh toán PayOS').item.json.tong_tien_bill }}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3e8309d5-9fd2-40c8-98ef-80e20d765add",
+      "name": "Kiểm tra số tiền khớp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2432,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Số tiền thanh toán không khớp với hóa đơn\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "7ef570e2-08b3-4311-8f18-5ec8c507dca8",
+      "name": "Trả lỗi số tiền không khớp",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2624,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE utility_bills SET trang_thai = 'Đã thanh toán' WHERE id = {{ $json.bill_id }};",
+        "options": {}
+      },
+      "id": "3fb0a38a-ca1f-4038-ab6c-aca2002fa8cc",
+      "name": "Cập nhật trạng thái gửi DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2656,
+        -112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Lấy thông tin hợp đồng').item.json.email }}",
+        "subject": "Xác nhận thanh toán hóa đơn điện nước thành công - Biên lai điện tử",
+        "emailType": "text",
+        "message": "=Kính gửi {{ $('Lấy thông tin hợp đồng').item.json.ho_ten }},\n\nChúng tôi xác nhận đã nhận được khoản thanh toán hóa đơn điện nước của bạn qua PayOS (Đã xác minh an toàn).\n\nChi tiết hóa đơn điện nước:\n- Phòng: {{ $('Lấy thông tin hợp đồng').item.json.ma_phong }}\n- Kỳ hóa đơn: {{ $('Lấy thông tin hợp đồng').item.json.thang_nam }}\n- Tổng tiền đã đóng: {{ $('Lấy thông tin hợp đồng').item.json.tong_tien }} VNĐ\n- Trạng thái: Đã thanh toán thành công\n\nCảm ơn bạn đã thanh toán hóa đơn đúng hạn.\n\nTrân trọng,\nBan quản lý",
+        "options": {}
+      },
+      "id": "a1b1b6fc-967d-4bc9-b405-608493cb41cb",
+      "name": "Gửi bill cho khách hàng",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        -112
+      ],
+      "webhookId": "8193ec77-44a5-4fb9-b36b-cafdf0203f7e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Thanh toán đã được xác nhận và bill đã được gửi\",\n  \"data\": {\n    \"maPhong\": \"={{ $('Lấy thông tin hợp đồng').item.json.ma_phong }}\",\n    \"soTien\": \"={{ $('Lấy thông tin hợp đồng').item.json.tong_tien }}\",\n    \"trangThai\": \"confirmed\"\n  }\n}",
+        "options": {}
+      },
+      "id": "061cf349-ffcc-4f01-bf80-abaf6c6e2ffe",
+      "name": "Trả kết quả phản hồi",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3168,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const today = new Date();\nconst endDate = new Date($input.item.json.ngayKetThuc);\nconst diffTime = endDate - today;\nconst daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));\n\nreturn {\n  ...$input.item.json,\n  soNgayConLai: daysRemaining,\n  trangThaiHopDong: daysRemaining <= 0 ? \"Hết hạn\" : daysRemaining <= 30 ? \"Sắp hết hạn\" : \"Còn hiệu lực\"\n};"
+      },
+      "id": "9b273cdf-8435-4fc1-9b07-b7e4f70d311e",
+      "name": "Tính số ngày còn lại1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.soNgayConLai }}",
+              "rightValue": 30,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4923f138-c8b5-4a37-a6d7-46358cf3787c",
+      "name": "Kiểm tra còn 30 ngày1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2080,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Thông báo hợp đồng sắp hết hạn - Phòng {{ $json.maPhong }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n  <h2 style=\"color: #ff9800;\">⏰ Thông báo hợp đồng sắp hết hạn</h2>\n  <p>Kính gửi <strong>{{ $json.tenKhach }}</strong>,</p>\n  <p>Hợp đồng thuê phòng <strong>{{ $json.maPhong }}</strong> của bạn sắp hết hạn vào ngày <strong style=\"color: #ff9800;\">{{ $json.ngayKetThuc }}</strong> (còn {{ $json.soNgayConLai }} ngày).</p>\n  <div style=\"background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n    <p style=\"font-size: 16px; margin-bottom: 15px;\"><strong>Bạn muốn:</strong></p>\n    <div style=\"margin: 10px 0;\">\n      <a href=\"http://localhost:5679/webhook/contract-response?action=renew&contractId={{ $json.id }}\" style=\"display: inline-block; background: #4caf50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-right: 10px;\">✅ Gia hạn hợp đồng</a>\n    </div>\n    <div style=\"margin: 10px 0;\">\n      <a href=\"http://localhost:5679/webhook/contract-response?action=return&contractId={{ $json.id }}\" style=\"display: inline-block; background: #f44336; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;\">❌ Trả phòng</a>\n    </div>\n  </div>\n  <p style=\"font-size: 14px; color: #666;\">Vui lòng phản hồi trước ngày <strong>{{ $json.ngayKetThuc }}</strong> để chúng tôi sắp xếp phù hợp.</p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">Trân trọng,<br>Ban quản lý</p>\n</div>",
+        "options": {}
+      },
+      "id": "5b6cfbf0-7d07-4665-8225-951218704faa",
+      "name": "Email hỏi ý kiến gia hạn1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2320,
+        464
+      ],
+      "webhookId": "f476f1a4-dc74-4064-8049-368d6a4cb009",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    c.id,\n    r.ma_phong as \"maPhong\",\n    t.ho_ten as \"tenKhach\",\n    t.email,\n    c.ngay_bat_dau as \"ngayBatDau\",\n    c.ngay_ket_thuc as \"ngayKetThuc\"\nFROM contracts c\nJOIN rooms r ON c.room_id = r.id\nJOIN tenants t ON c.tenant_id = t.id\nWHERE c.ngay_ket_thuc >= CURRENT_DATE\n  AND c.ngay_ket_thuc <= CURRENT_DATE + INTERVAL '30 days'\n  AND c.trang_thai = 'Hiệu lực'\nORDER BY c.ngay_ket_thuc ASC;",
+        "options": {}
+      },
+      "id": "b5a35d24-c0b4-4267-9b03-6f48d37e1c6c",
+      "name": "Lấy danh sách hợp đồng từ DB1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1632,
+        480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "contract-response",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0a6a8fb8-61cb-4c00-99b7-3bd4f81b3762",
+      "name": "Nhận phản hồi từ React1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1408,
+        704
+      ],
+      "webhookId": "2ba20120-0653-4158-a5b1-e86fdb6acc83"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://clm_fastapi:8000/api/contracts/update-decision",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contractId\": \"={{ $json.query.contractId }}\",\n  \"action\": \"={{ $json.query.action }}\",\n  \"timestamp\": \"={{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "9eb10ef7-4a84-4250-ac20-bfb358e80f9e",
+      "name": "Cập nhật quyết định qua FastAPI1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1632,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Cảm ơn bạn đã phản hồi. Chúng tôi sẽ xử lý yêu cầu của bạn.\",\n  \"contractId\": \"={{ $json.query.contractId }}\",\n  \"action\": \"={{ $json.query.action }}\"\n}",
+        "options": {}
+      },
+      "id": "128f762a-8eb5-4730-abfe-e7d8c31e212d",
+      "name": "Trả response cho React",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1856,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "afc2d2de-c446-4106-b225-24c8f21ed965",
+      "name": "Kiểm tra hàng ngày 8h sáng1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bao-cao-su-co",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "529e4948-92ae-4e33-9c66-a71f26a0096c",
+      "name": "Webhook - Incident Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        1008
+      ],
+      "webhookId": "d7351124-7734-4f74-82e2-eb8c421cfaea"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là chuyên gia quản lý tòa nhà thông minh. Hãy phân tích báo cáo sự cố sau từ khách thuê:\n'{{ $json.body.description }}'\n\nNhiệm vụ của bạn:\n1. Phân loại cấp độ (suggested_level):\n   - Mức 1 (Khẩn cấp): Các sự cố cháy nổ, rò rỉ gas, sập đổ, rò điện nguy hiểm hoặc các tình huống đe dọa trực tiếp tính mạng và tài sản lớn.\n   - Mức 2 (Ưu tiên): Mất điện toàn khu, mất nước sạch, rò rỉ nước lớn, hỏng khóa cửa chính hoặc sự cố làm gián đoạn sinh hoạt nghiêm trọng.\n   - Mức 3 (Bình thường): Hỏng bóng đèn, Wifi yếu, vòi nước rỉ nhẹ, hỏng vặt, các lỗi thẩm mỹ không gấp.\n2. Tóm tắt sự cố (summary): Viết một câu tóm tắt ngắn gọn báo cáo sự cố để chủ trọ đọc nhanh.\n3. Độ nguy hiểm (is_dangerous): Trả về true nếu có nguy cơ cháy nổ/điện giật, ngược lại trả về false.\n\nHãy trả về dữ liệu đúng định dạng JSON yêu cầu.\n",
+        "hasOutputParser": true
+      },
+      "id": "3cf45b67-24a9-4293-aaf7-b8b38d79ea4a",
+      "name": "AI Analysis",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1680,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "id": "48a63f7d-a2a0-4a8d-931d-1596b8cbc4b2",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        1216
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "CM7hEAqBLxnuaEpq",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"suggested_level\": {\n      \"type\": \"number\"\n    },\n    \"summary\": {\n      \"type\": \"string\"\n    },\n    \"is_dangerous\": {\n      \"type\": \"boolean\"\n    }\n  }\n}"
+      },
+      "id": "745552b1-2e79-48c5-92d3-3c218aa93c3c",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "-1003790123986",
+        "text": "=🚨 CÓ BÁO CÁO SỰ CỐ MỚI\n\nPhòng: {{ $('Webhook - Incident Report').item.json.body.room_id }}\nKhách báo: {{ $('Webhook - Incident Report').item.json.body.user_name }}\nCấp độ đề xuất (AI): Mức {{ $json.suggested_level }}\nTóm tắt (AI): {{ $json.summary }}\nMô tả gốc: {{ $('Webhook - Incident Report').item.json.body.description }}\n\nVui lòng bấm nút xác nhận cấp độ bên dưới:",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🔴 Mức 1 (Khẩn cấp)",
+                    "additionalFields": {
+                      "callback_data": "=1_{{ $('Webhook - Incident Report').item.json.body.incident_id || '0' }}"
+                    }
+                  },
+                  {
+                    "text": "🟡 Mức 2 (Ưu tiên)",
+                    "additionalFields": {
+                      "callback_data": "=2_{{ $('Webhook - Incident Report').item.json.body.incident_id || '0' }}"
+                    }
+                  },
+                  {
+                    "text": "🔵 Mức 3 (Bình thường)",
+                    "additionalFields": {
+                      "callback_data": "=3_{{ $('Webhook - Incident Report').item.json.body.incident_id || '0' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "80d65e22-c4e4-4954-ae59-240251ce0512",
+      "name": "Send Telegram to Owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2032,
+        1008
+      ],
+      "webhookId": "a13eb7f3-dc5b-46c5-bf52-22b823e70b79",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "09cf55eb-7cb9-49eb-8724-00c309783f46",
+      "name": "Telegram Trigger - Response",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        1456
+      ],
+      "webhookId": "tele-bot-callback",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "level",
+              "value": "={{ $json.callback_query.data.split('_')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "incident_id",
+              "value": "={{ $json.callback_query.data.split('_')[1] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b74cc2b7-0321-4397-8965-579093552336",
+      "name": "Parse Callback Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1536,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE incidents SET muc_do_khan_cap = \nCASE \n  WHEN TRIM('{{ $json.level }}') = '1' THEN 'Khẩn cấp'\n  WHEN TRIM('{{ $json.level }}') = '2' THEN 'Ưu tiên'\n  WHEN TRIM('{{ $json.level }}') = '3' THEN 'Bình thường'\n  ELSE 'Bình thường'\nEND\nWHERE id = {{ $json.incident_id }};\n\nSELECT \n  TRIM('{{ $json.level }}') as level_ai, -- Lấy luôn giá trị level vào đây\n  p.ma_phong, t.ho_ten, t.email, i.loai_su_co, i.mo_ta \nFROM incidents i\nJOIN rooms p ON i.room_id = p.id\nJOIN tenants t ON i.tenant_id = t.id\nWHERE i.id = {{ $json.incident_id }};\n",
+        "options": {}
+      },
+      "id": "a36276e8-cf04-41f8-9ebe-7a7bf2ee99ac",
+      "name": "Cập nhật DB & Lấy Info",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1792,
+        1456
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.level_ai }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Khẩn cấp"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.level_ai }}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ưu tiên"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "c3",
+                    "leftValue": "={{ $json.level_ai }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Bình thường"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aede97d6-979d-4853-b211-ab0c6276fb9a",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        2032,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "🚨 CẢNH BÁO KHẨN CẤP TỪ TÒA NHÀ",
+        "message": "=<div style=\"color: red; font-size: 16px;\">\n  <h2>CẢNH BÁO TÒA NHÀ</h2>\n  <p>Hệ thống phát hiện sự cố cháy nổ / nguy hiểm tại tòa nhà (Phòng {{ $('Cập nhật DB & Lấy Info').item.json.ma_phong }}). </p>\n  <p>Vui lòng giữ bình tĩnh và làm theo chỉ dẫn an toàn ngay lập tức.</p>\n</div>",
+        "options": {}
+      },
+      "id": "e7411827-ef45-4fd4-a35e-b0b58ec4b1d2",
+      "name": "Mass Email Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2336,
+        1264
+      ],
+      "webhookId": "edf25e65-2e70-42e8-b1a3-e6dde6a77885",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Thông báo sự cố - {{ $json.loai_su_co }}",
+        "message": "=Chào {{ $json.ho_ten }}, chúng tôi đã tiếp nhận báo cáo về [{{ $json.loai_su_co }} - {{ $json.mo_ta }}]. \nSự cố ĐƯỢC ƯU TIÊN xử lý. Nhân viên kỹ thuật sẽ liên hệ trong thời gian sớm nhất.",
+        "options": {}
+      },
+      "id": "fb70f962-1b9f-4262-af13-38b5145881f1",
+      "name": "High Priority Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2336,
+        1408
+      ],
+      "webhookId": "626df8b9-453a-4dc5-8f51-0676af278385",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1003790123986",
+        "text": "=✅ Đã xác nhận mức độ {{ $json.level_ai }}\n(Sự kiện đã đóng)",
+        "additionalFields": {}
+      },
+      "id": "1c91259d-f94f-4bb6-bff6-f88d6828c2c8",
+      "name": "Xóa Nút Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2672,
+        1504
+      ],
+      "webhookId": "0cf5c927-d221-4e9b-880a-f2607e2cd217",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (FastAPI gọi)": {
+      "main": [
+        [
+          {
+            "node": "Format & Tạo HTML Hợp Đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format & Tạo HTML Hợp Đồng": {
+      "main": [
+        [
+          {
+            "node": "HTML String → Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML String → Binary File": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg: HTML → PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg: HTML → PDF": {
+      "main": [
+        [
+          {
+            "node": "Lấy PDF Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy PDF Base64": {
+      "main": [
+        [
+          {
+            "node": "Lưu PDF vào Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu PDF vào Database": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Mail + PDF Hợp Đồng": {
+      "main": [
+        [
+          {
+            "node": "Báo cáo Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Gửi Mail + PDF Hợp Đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Xử lý Base64 sang File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xử lý Base64 sang File": {
+      "main": [
+        [
+          {
+            "node": "Tele: Báo cáo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: CCCD Trước",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: CCCD Sau",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: PDF Hợp Đồng",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mail: Cấp Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gửi ảnh Telegram": {
+      "main": [
+        [
+          {
+            "node": "AI Đọc Số (OCR.Space)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bóc tách Dữ liệu": {
+      "main": [
+        [
+          {
+            "node": "Lấy Tiền Nhà & Điện Cũ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Đọc Số (OCR.Space)": {
+      "main": [
+        [
+          {
+            "node": "Bóc tách Dữ liệu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy Tiền Nhà & Điện Cũ": {
+      "main": [
+        [
+          {
+            "node": "Manual: Set Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Chốt tay)1": {
+      "main": [
+        [
+          {
+            "node": "Manual: Set Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual: Set Flag": {
+      "main": [
+        [
+          {
+            "node": "2. Tính Toán & VietQR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Đóng gói PDF & Base64": {
+      "main": [
+        [
+          {
+            "node": "7. Tele: Báo cáo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "6. Lưu Database",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gửi Mail Hóa Đơn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "5. Đóng gói PDF & Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Gotenberg (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "3. Dàn trang HTML": {
+      "main": [
+        [
+          {
+            "node": "4. Gotenberg (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Tính Toán & VietQR": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "3. Dàn trang HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook PayOS": {
+      "main": [
+        [
+          {
+            "node": "Tạo chuỗi xác thực",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo chuỗi xác thực": {
+      "main": [
+        [
+          {
+            "node": "Tính toán HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tính toán HMAC": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra Chữ ký HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra Chữ ký HMAC": {
+      "main": [
+        [
+          {
+            "node": "Trích xuất dữ liệu thanh toán PayOS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Từ chối Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trích xuất dữ liệu thanh toán PayOS": {
+      "main": [
+        [
+          {
+            "node": "Lấy thông tin hợp đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy thông tin hợp đồng": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra số tiền khớp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra số tiền khớp": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật trạng thái gửi DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trả lỗi số tiền không khớp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật trạng thái gửi DB": {
+      "main": [
+        [
+          {
+            "node": "Gửi bill cho khách hàng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi bill cho khách hàng": {
+      "main": [
+        [
+          {
+            "node": "Trả kết quả phản hồi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tính số ngày còn lại1": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra còn 30 ngày1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra còn 30 ngày1": {
+      "main": [
+        [
+          {
+            "node": "Email hỏi ý kiến gia hạn1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy danh sách hợp đồng từ DB1": {
+      "main": [
+        [
+          {
+            "node": "Tính số ngày còn lại1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nhận phản hồi từ React1": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật quyết định qua FastAPI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật quyết định qua FastAPI1": {
+      "main": [
+        [
+          {
+            "node": "Trả response cho React",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra hàng ngày 8h sáng1": {
+      "main": [
+        [
+          {
+            "node": "Lấy danh sách hợp đồng từ DB1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Incident Report": {
+      "main": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram to Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger - Response": {
+      "main": [
+        [
+          {
+            "node": "Parse Callback Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Callback Data": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật DB & Lấy Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật DB & Lấy Info": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Mass Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "High Priority Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Xóa Nút Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mass Email Alert": {
+      "main": [
+        [
+          {
+            "node": "Xóa Nút Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High Priority Email": {
+      "main": [
+        [
+          {
+            "node": "Xóa Nút Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f2285ab3-297c-48bd-b0d9-cc3e728cf05e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99b801ad2317bd8fa417b21134ca8050bf3a38b35681c8d7793c3b6c4072a11b"
+  },
+  "id": "vHCvn8H4PvCZXkQN",
+  "tags": []
+}
