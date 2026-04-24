@@ -278,7 +278,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const d = $json;\nconst html = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 40px; color: #333; }\n        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 16px; line-height: 24px; }\n        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 20px; }\n        .header h1 { margin: 0; color: #1e40af; font-size: 32px; }\n        .info-table { width: 100%; margin-bottom: 30px; }\n        .info-table td { padding: 5px; }\n        .billing-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }\n        .billing-table th, .billing-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }\n        .billing-table th { background-color: #f8fafc; color: #1e40af; font-weight: bold; }\n        .total-row { font-size: 18px; font-weight: bold; background-color: #e2e8f0; }\n        .total-row td { color: #dc2626; text-align: right; }\n        .footer { text-align: center; margin-top: 40px; font-size: 14px; color: #666; }\n        .qr-container { text-align: center; margin-top: 20px; }\n        .qr-container img { border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: white; }\n    </style>\n</head>\n<body>\n    <div class=\"invoice-box\">\n        <div class=\"header\">\n            <div>\n                <h1>HÓA ĐƠN THANH TOÁN</h1>\n                <p>Kỳ cước: Tháng ${d.thangDisplay}</p>\n            </div>\n            <div style=\"text-align: right;\">\n                <h2 style=\"margin: 0; color: #dc2626;\">Phòng: ${d.phong}</h2>\n            </div>\n        </div>\n        \n        <table class=\"info-table\">\n            <tr>\n                <td><strong>Khách hàng:</strong> ${d.hoTen}</td>\n                <td style=\"text-align: right;\"><strong>Ngày lập:</strong> ${new Date().toLocaleDateString('vi-VN')}</td>\n            </tr>\n        </table>\n\n        <table class=\"billing-table\">\n            <thead>\n                <tr>\n                    <th>Hạng mục</th>\n                    <th>Chỉ số đầu</th>\n                    <th>Chỉ số cuối</th>\n                    <th style=\"text-align: right;\">Thành tiền</th>\n                </tr>\n            </thead>\n            <tbody>\n                <tr>\n                    <td>Tiền thuê phòng</td>\n                    <td>-</td>\n                    <td>-</td>\n                    <td style=\"text-align: right;\">${d.txt_phong}</td>\n                </tr>\n                <tr>\n                    <td>Tiền điện</td>\n                    <td>${d.chi_so_dien_cu}</td>\n                    <td>${d.chi_so_dien_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_dien || 'Tính gộp'}</td>\n                </tr>\n                <tr>\n                    <td>Tiền nước</td>\n                    <td>${d.chi_so_nuoc_cu}</td>\n                    <td>${d.chi_so_nuoc_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_nuoc || 'Tính gộp'}</td>\n                </tr>\n                <tr class=\"total-row\">\n                    <td colspan=\"3\" style=\"text-align: right;\">TỔNG CỘNG:</td>\n                    <td>${d.txt_tong}</td>\n                </tr>\n            </tbody>\n        </table>\n\n        <div class=\"qr-container\">\n            <h3>Quét mã QR để thanh toán nhanh</h3>\n            <img src=\"${d.qrUrl}\" alt=\"VietQR\" width=\"250\" />\n            <p>Nội dung CK: <strong>ThanhToan P${d.phong}</strong></p>\n        </div>\n\n        <div class=\"footer\">\n            <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>\n            <p>Mọi thắc mắc xin vui lòng liên hệ Ban Quản Lý CLM.</p>\n        </div>\n    </div>\n</body>\n</html>`;\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
+        "jsCode": "const d = $json;\nconst payos = $('API Lấy QR PayOS').item.json;\nconst qrUrl = payos.qr_image_url || d.qrUrl;\n\nconst html = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 40px; color: #333; }\n        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 16px; line-height: 24px; }\n        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 20px; }\n        .header h1 { margin: 0; color: #1e40af; font-size: 32px; }\n        .info-table { width: 100%; margin-bottom: 30px; }\n        .info-table td { padding: 5px; }\n        .billing-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }\n        .billing-table th, .billing-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }\n        .billing-table th { background-color: #f8fafc; color: #1e40af; font-weight: bold; }\n        .total-row { font-size: 18px; font-weight: bold; background-color: #e2e8f0; }\n        .total-row td { color: #dc2626; text-align: right; }\n        .footer { text-align: center; margin-top: 40px; font-size: 14px; color: #666; }\n        .qr-container { text-align: center; margin-top: 20px; }\n        .qr-container img { border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: white; }\n    </style>\n</head>\n<body>\n    <div class=\"invoice-box\">\n        <div class=\"header\">\n            <div>\n                <h1>HÓA ĐƠN THANH TOÁN</h1>\n                <p>Kỳ cước: Tháng ${d.thangDisplay}</p>\n            </div>\n            <div style=\"text-align: right;\">\n                <h2 style=\"margin: 0; color: #dc2626;\">Phòng: ${d.phong}</h2>\n            </div>\n        </div>\n        \n        <table class=\"info-table\">\n            <tr>\n                <td><strong>Khách hàng:</strong> ${d.hoTen}</td>\n                <td style=\"text-align: right;\"><strong>Ngày lập:</strong> ${new Date().toLocaleDateString('vi-VN')}</td>\n            </tr>\n        </table>\n\n        <table class=\"billing-table\">\n            <thead>\n                <tr>\n                    <th>Hạng mục</th>\n                    <th>Chỉ số đầu</th>\n                    <th>Chỉ số cuối</th>\n                    <th style=\"text-align: right;\">Thành tiền</th>\n                </tr>\n            </thead>\n            <tbody>\n                <tr>\n                    <td>Tiền thuê phòng</td>\n                    <td>-</td>\n                    <td>-</td>\n                    <td style=\"text-align: right;\">${d.txt_phong}</td>\n                </tr>\n                <tr>\n                    <td>Tiền điện</td>\n                    <td>${d.chi_so_dien_cu}</td>\n                    <td>${d.chi_so_dien_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_dien || 'Tính gộp'}</td>\n                </tr>\n                <tr>\n                    <td>Tiền nước</td>\n                    <td>${d.chi_so_nuoc_cu}</td>\n                    <td>${d.chi_so_nuoc_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_nuoc || 'Tính gộp'}</td>\n                </tr>\n                <tr class=\"total-row\">\n                    <td colspan=\"3\" style=\"text-align: right;\">TỔNG CỘNG:</td>\n                    <td>${d.txt_tong}</td>\n                </tr>\n            </tbody>\n        </table>\n\n        <div class=\"qr-container\">\n            <h3>Quét mã QR để thanh toán nhanh</h3>\n            <img src=\"${qrUrl}\" alt=\"PayOS QR\" width=\"250\" />\n            <p>Nội dung CK: <strong>P${d.phong}</strong></p>\n            ${payos.checkout_url ? `<p><a href=\"${payos.checkout_url}\">Hoặc nhấn vào đây để mở trang thanh toán</a></p>` : ''}\n        </div>\n\n        <div class=\"footer\">\n            <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>\n            <p>Mọi thắc mắc xin vui lòng liên hệ Ban Quản Lý CLM.</p>\n        </div>\n    </div>\n</body>\n</html>`;\nreturn {\n  json: { ...d, qrUrl },\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
       },
       "id": "8f133e44-1ac7-427c-bcc4-842f33b1d77c",
       "name": "3. Dàn trang HTML",
@@ -331,6 +331,58 @@
           "name": "Gmail account"
         }
       }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/bills/draft-and-qr",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phong",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.phong }}"
+            },
+            {
+              "name": "tong_tien",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.val_tong }}"
+            },
+            {
+              "name": "thang_nam",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}"
+            },
+            {
+              "name": "chi_so_dien_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_moi }}"
+            },
+            {
+              "name": "chi_so_dien_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_moi }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "new-payos-node-id",
+      "name": "API Lấy QR PayOS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        200,
+        1024
+      ]
     }
   ],
   "connections": {
@@ -466,6 +518,17 @@
       ]
     },
     "2. Tính Toán & VietQR": {
+      "main": [
+        [
+          {
+            "node": "API Lấy QR PayOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Lấy QR PayOS": {
       "main": [
         [
           {

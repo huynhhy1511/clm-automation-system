@@ -179,24 +179,23 @@ import logging
 
 logger = logging.getLogger("uvicorn.error")
 
-@router.post("/save")
-async def save_invoice(
+@router.post("/draft-and-qr")
+async def draft_and_qr(
     payload: schemas.InvoiceSaveRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Endpoint gọi bởi n8n sau khi tạo PDF.
-    Tìm/Tạo Bill -> Giải mã Base64 -> Lưu file .pdf vật lý -> Cập nhật URL.
+    Endpoint chuẩn bị hóa đơn và lấy mã QR PayOS (giống cách làm ở Workflow 1).
+    Được gọi bởi n8n sau khi đã tính toán xong xuôi số tiền.
     """
-    logger.info(f"N8N PAYLOAD RECEIVED: {payload.model_dump_json(indent=2)}")
+    logger.info(f"PAYOS DRAFT FOR ROOM: {payload.phong}")
     
-    # 1. Tìm Room_id từ ma_phong (Khớp với trường 'phong' trong n8n)
     room_res = await db.execute(select(models.Room).where(models.Room.ma_phong == payload.phong))
     room = room_res.scalar_one_or_none()
     if not room:
         raise HTTPException(status_code=404, detail=f"Không tìm thấy phòng {payload.phong}")
     
-    # 2. Tìm xem đã có Bill cho phòng này và tháng này chưa
+    # Kiểm tra xem tháng này đã có bill chưa
     bill_res = await db.execute(
         select(models.UtilityBill)
         .where(models.UtilityBill.room_id == room.id, models.UtilityBill.thang_nam == payload.thang_nam)
@@ -204,7 +203,6 @@ async def save_invoice(
     bill = bill_res.scalar_one_or_none()
     
     if not bill:
-        # Nếu chưa có thì tạo mới
         bill = models.UtilityBill(
             room_id=room.id,
             thang_nam=payload.thang_nam,
@@ -216,17 +214,97 @@ async def save_invoice(
             trang_thai="Chưa thanh toán"
         )
         db.add(bill)
-        await db.flush() # Để có bill.id
+        await db.flush()
     else:
-        # Nếu có rồi thì cập nhật thông tin
+        # Cập nhật lại chỉ số mới nhất nếu có thay đổi
         bill.chi_so_dien_cu = payload.chi_so_dien_cu
         bill.chi_so_dien_moi = payload.chi_so_dien_moi
         bill.chi_so_nuoc_cu = payload.chi_so_nuoc_cu
         bill.chi_so_nuoc_moi = payload.chi_so_nuoc_moi
         bill.tong_tien = payload.tong_tien
-        # Reset trạng thái về 'Chưa thanh toán' để cho phép thanh toán lại với số tiền mới
         bill.trang_thai = "Chưa thanh toán"
-        bill.payos_order_code = None
+
+    import time
+    from payos.types import CreatePaymentLinkRequest
+    from app.core.config import settings
+    from app.core.payos_provider import payos
+
+    # Tạo mã đơn hàng duy nhất cho PayOS
+    bill.payos_order_code = int(str(bill.id) + str(int(time.time() * 1000))[-6:])
+    await db.commit()
+
+    qr_image_url = ""
+    checkout_url = ""
+
+    if payos:
+        # Quan trọng: description phải chứa mã phòng để Workflow 4 có thể đọc được
+        payment_data = CreatePaymentLinkRequest(
+            orderCode=bill.payos_order_code,
+            amount=int(bill.tong_tien),
+            description=f"ThanhToan_{room.ma_phong}",
+            cancelUrl=settings.PAYOS_CANCEL_URL,
+            returnUrl=settings.PAYOS_RETURN_URL
+        )
+        try:
+            payment_response = await payos.payment_requests.create(payment_data)
+            checkout_url = getattr(payment_response, 'checkoutUrl', '')
+            qr_code_str = getattr(payment_response, 'qrCode', '')
+            if qr_code_str:
+                import urllib.parse
+                qr_image_url = f"https://chart.googleapis.com/chart?chs=400x400&cht=qr&chl={urllib.parse.quote(qr_code_str)}&choe=UTF-8"
+        except Exception as e:
+            logger.error(f"PayOS API Error: {e}")
+
+    return {
+        "bill_id": bill.id,
+        "qr_image_url": qr_image_url,
+        "checkout_url": checkout_url
+    }
+
+@router.post("/save")
+async def save_invoice(
+    payload: schemas.InvoiceSaveRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Lưu hóa đơn vào DB, đè lên Bill nháp đã tạo ở bước draft-and-qr.
+    """
+    logger.info(f"N8N SAVE PAYLOAD: {payload.model_dump_json()}")
+    
+    # 1. Tìm phòng
+    room_res = await db.execute(select(models.Room).where(models.Room.ma_phong == payload.phong))
+    room = room_res.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="Không tìm thấy phòng")
+
+    # 2. Tìm hoặc tạo bill
+    bill_res = await db.execute(
+        select(models.UtilityBill)
+        .where(models.UtilityBill.room_id == room.id, models.UtilityBill.thang_nam == payload.thang_nam)
+    )
+    bill = bill_res.scalar_one_or_none()
+
+    if not bill:
+        bill = models.UtilityBill(
+            room_id=room.id,
+            thang_nam=payload.thang_nam,
+            chi_so_dien_cu=payload.chi_so_dien_cu,
+            chi_so_dien_moi=payload.chi_so_dien_moi,
+            chi_so_nuoc_cu=payload.chi_so_nuoc_cu,
+            chi_so_nuoc_moi=payload.chi_so_nuoc_moi,
+            tong_tien=payload.tong_tien,
+            trang_thai="Chưa thanh toán"
+        )
+        db.add(bill)
+        await db.flush() 
+    else:
+        bill.chi_so_dien_cu = payload.chi_so_dien_cu
+        bill.chi_so_dien_moi = payload.chi_so_dien_moi
+        bill.chi_so_nuoc_cu = payload.chi_so_nuoc_cu
+        bill.chi_so_nuoc_moi = payload.chi_so_nuoc_moi
+        bill.tong_tien = payload.tong_tien
+        bill.trang_thai = "Chưa thanh toán"
+        # KHÔNG reset payos_order_code để giữ liên kết với QR cũ đã tạo ở bước draft
 
     # 3. Giải mã và lưu PDF (Chỉ thực hiện nếu có dữ liệu)
     if payload.pdf_base64:

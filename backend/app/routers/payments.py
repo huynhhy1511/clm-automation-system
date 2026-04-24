@@ -135,12 +135,13 @@ async def payos_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                             "tienPhongFormatted": "Thu chung",
                             "tongTienFormatted": f"{bill.tong_tien:,.0f}".replace(",", ".")
                         }
+                        # Forward toàn bộ body từ PayOS sang Workflow 4 để n8n tự xác thực và gửi mail
                         async with httpx.AsyncClient() as client:
-                            await client.post("http://n8n:5678/webhook/xac-nhan-hoa-don", json=payload, timeout=10.0)
+                            await client.post("http://n8n:5678/webhook/api/payments/payos-webhook", json=body, timeout=10.0)
                     except Exception as e:
-                        logger.error(f"Failed to call n8n webhook: {e}")
+                        logger.error(f"Failed to forward PayOS webhook to n8n Workflow 4: {e}")
                     
-                    return {"status": "success", "message": "Bill marked as paid and webhook triggered"}
+                    return {"status": "success", "message": "Bill marked as paid and forwarded to n8n"}
                     
                 logger.warning(f"No contract or bill found with payos_order_code: {numeric_order_code}")
         
