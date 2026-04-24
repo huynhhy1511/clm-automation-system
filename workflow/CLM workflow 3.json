@@ -1,5 +1,4 @@
 {
-  "name": "CLM workflow 3",
   "nodes": [
     {
       "parameters": {
@@ -7,17 +6,17 @@
         "query": "SELECT r.ma_phong AS phong, '{{ $json.chiSoDienMoi }}'::numeric AS \"chiSoDienMoi\", 'AI_OCR_ADMIN' AS nguon, c.gia_thue_chot AS \"tienPhong\", t.ho_ten AS \"hoTen\", t.email AS \"email\", COALESCE((SELECT chi_so_dien_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1), 0) AS \"chiSoDienCu\", COALESCE((SELECT chi_so_nuoc_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1), 0) AS \"chiSoNuocCu\" FROM rooms r JOIN contracts c ON r.id = c.room_id JOIN tenants t ON c.tenant_id = t.id WHERE r.ma_phong = '{{ $json.phong }}' AND c.trang_thai = 'Hiệu lực' LIMIT 1;",
         "options": {}
       },
-      "id": "6fe3f648-16db-42a3-a737-efb7e3392547",
+      "id": "64223c75-8af2-42b0-81da-df25b764a524",
       "name": "Lấy Tiền Nhà & Điện Cũ",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -8336,
-        4592
+        -1136,
+        1248
       ],
       "credentials": {
         "postgres": {
-          "id": "riWAm7ixYWerH0ry",
+          "id": "DWwicrJcvSj795aW",
           "name": "Postgres account"
         }
       }
@@ -27,78 +26,78 @@
         "updates": [
           "message"
         ],
-        "additionalFields": {}
+        "additionalFields": {
+          "download": true
+        }
       },
-      "id": "1aecca67-ec55-4ef7-8eba-48283fdce01d",
+      "id": "a0431a12-5c0c-4352-a0b3-3a17a0b07e8a",
       "name": "gửi ảnh Telegram",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [
-        -8976,
-        4592
+        -2016,
+        1248
       ],
       "webhookId": "6769407f-6c79-4724-b5e4-8720e19d92d1",
       "credentials": {
         "telegramApi": {
-          "id": "xJ5hM6BFpWwN99k8",
-          "name": "Telegram account"
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "try {\n  const ADMIN_TELEGRAM_ID = 6126814953;\n  const senderId = $('gửi ảnh Telegram').item.json.message.from.id;\n  if (senderId !== ADMIN_TELEGRAM_ID) throw new Error(\"Cảnh báo: Bạn không có quyền sử dụng Bot!\");\n  const ocrText = $json.ParsedResults[0].ParsedText;\n  const caption = $('gửi ảnh Telegram').item.json.message.caption || '';\n  const matchPhong = caption.match(/(?:P|#|Phòng\\s*)(\\d{3,4})/i);\n  const phong = matchPhong ? matchPhong[1] : '???';\n  if (phong === '???') throw new Error(\"Lỗi: Quên ghi mã phòng ở phần Caption rồi!\");\n  const numbers = ocrText.match(/\\d+/g);\n  let chiSoMoi = 0;\n  if (numbers && numbers.length > 0) chiSoMoi = Math.max(...numbers.map(Number)); \n  return {\n    json: {\n      phong: phong,\n      chiSoDienMoi: chiSoMoi,\n      nguon: \"AI_OCR_ADMIN\"\n    }\n  };\n} catch (error) {\n  throw new Error(error.message);\n}"
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Chuyển đổi Binary Telegram sang mã Base64 chuẩn\nconst binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\nreturn {\n  json: {\n    imageBase64: binaryData.toString('base64')\n  }\n};"
       },
-      "id": "a2d26dc1-c6cb-4cda-bcee-dfeac10722b5",
-      "name": "Bóc tách Dữ liệu",
+      "id": "e6ba8899-c960-4793-9e0d-de3dbc669c2e",
+      "name": "Chuyển ảnh sang Base64",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -8576,
-        4592
+        -1808,
+        1248
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.ocr.space/parse/image",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "apikey",
-              "value": "helloworld"
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY_HERE"
             }
           ]
         },
         "sendBody": true,
-        "contentType": "multipart-form-data",
-        "bodyParameters": {
-          "parameters": [
-            {
-              "parameterType": "formBinaryData",
-              "name": "file",
-              "inputDataFieldName": "attachment_0"
-            },
-            {
-              "parameterType": "formKeyValue",
-              "name": "language"
-            },
-            {
-              "parameterType": "formKeyValue",
-              "name": "isOverlayRequired"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Đây là ảnh chụp công tơ điện. Hãy nhìn vào ô hiển thị chỉ số chính (thường nằm cạnh chữ kWh) và cho tôi biết con số hiện tại là bao nhiêu. Trả về kết quả dưới dạng JSON: {\\\"chiSoDien\\\": 123}\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:image/jpeg;base64,{{ $json.imageBase64 }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"response_format\": { \"type\": \"json_object\" }\n}\n",
         "options": {}
       },
-      "id": "250cb3ff-ca95-4af5-ab4b-1bde651f4234",
-      "name": "AI Đọc Số (OCR.Space)",
+      "id": "c0074e0a-f0d6-444e-a52f-8e438be009f1",
+      "name": "HTTP Request",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -8768,
-        4592
+        -1600,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\ntry {\n  // Lấy dữ liệu từ Groq (Nằm trong choices[0].message.content)\n  const groqOutput = $json.choices[0].message.content;\n  \n  let chiSoMoi = 0;\n  try {\n    const jsonMatch = groqOutput.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      const parsed = JSON.parse(jsonMatch[0]);\n      chiSoMoi = parsed.chiSoDien || 0;\n    } else {\n      const match = groqOutput.match(/\\d+/);\n      chiSoMoi = match ? Number(match[0]) : 0;\n    }\n  } catch (e) {\n    const match = groqOutput.match(/\\d+/);\n    chiSoMoi = match ? Number(match[0]) : 0;\n  }\n  \n  const caption = $('gửi ảnh Telegram').item.json.message.caption || '';\n  // Thay đoạn regex cũ bằng đoạn này để lấy cả chữ cái (ví dụ: P101)\n  const matchPhong = caption.match(/(?:#|Phòng\\s*)?([A-Z]*\\d{3,4})/i);\n  const phong = matchPhong ? matchPhong[1] : '???';\n\n  \n  if (phong === '???') throw new Error(\"Lỗi: Bạn chưa ghi mã phòng ở phần Caption (ví dụ: P101)\");\n\n  return {\n    json: {\n      phong: phong,\n      chiSoDienMoi: chiSoMoi,\n      nguon: \"AI_GROQ_ADMIN\",\n      ai_raw: groqOutput\n    }\n  };\n} catch (error) {\n  throw new Error(\"Lỗi xử lý dữ liệu AI Groq: \" + error.message);\n}\n"
+      },
+      "id": "8ece3152-2107-4552-910c-243a59192836",
+      "name": "Bóc tách Dữ liệu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1360,
+        1248
       ]
     },
     {
@@ -113,15 +112,16 @@
             }
           ]
         },
+        "includeOtherFields": true,
         "options": {}
       },
-      "id": "6e05a44d-d563-47a6-9444-e4472c85ea56",
+      "id": "8700346e-2dde-4cb6-90f4-8065ee120626",
       "name": "Manual: Set Flag",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -8112,
-        4528
+        -912,
+        1184
       ]
     },
     {
@@ -130,13 +130,13 @@
         "path": "chot-dien-nuoc",
         "options": {}
       },
-      "id": "af8e7685-a96e-4d39-b1f6-6b71c6a582b3",
+      "id": "249dbb44-1be5-43ea-ac3c-9bc00a98006a",
       "name": "Webhook (Chốt tay)1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -8576,
-        4384
+        -1408,
+        1040
       ],
       "webhookId": "9180ca77-47a2-4ed4-a712-acfa9b297ebe"
     },
@@ -149,19 +149,19 @@
           "caption": "=🚀 [BÁO CÁO HÓA ĐƠN GỘP]\n🏠 Phòng: {{ $('2. Tính Toán & VietQR').item.json.phong }}\n💸 Tổng tiền: {{ $('2. Tính Toán & VietQR').item.json.txt_tong }}\n✅ Trạng thái: Hoàn tất chốt sổ."
         }
       },
-      "id": "ced06535-5424-4f01-bf0e-23222f3b9101",
+      "id": "7158e088-3472-40b9-ad95-589f802e9016",
       "name": "7. Tele: Báo cáo",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
       "position": [
-        -6672,
-        4544
+        528,
+        1200
       ],
       "webhookId": "361d59f0-62c5-4a54-9f57-1f8e4f7df4d7",
       "credentials": {
         "telegramApi": {
-          "id": "xJ5hM6BFpWwN99k8",
-          "name": "Telegram account"
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
         }
       }
     },
@@ -212,13 +212,13 @@
         },
         "options": {}
       },
-      "id": "a27465ee-62d2-456b-b21b-ae7fa23cb498",
+      "id": "4c1e5cbb-8d1f-4444-9c59-33c92e582bb2",
       "name": "6. Lưu Database",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        -6672,
-        4240
+        528,
+        896
       ]
     },
     {
@@ -226,13 +226,13 @@
         "mode": "runOnceForEachItem",
         "jsCode": "const fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst info = $('2. Tính Toán & VietQR').item.json;\n\nreturn {\n  json: { ...info, pdfBase64 },\n  binary: {\n    data: await this.helpers.prepareBinaryData(fileBuffer, `HoaDon_P${info.phong}.pdf`, 'application/pdf')\n  }\n};"
       },
-      "id": "aad8c5b9-f910-409a-9d53-a445e37f3393",
+      "id": "219aadd1-91ce-44a9-86f2-7506b587cc57",
       "name": "5. Đóng gói PDF & Base64",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -6928,
-        4384
+        272,
+        1040
       ]
     },
     {
@@ -241,13 +241,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "60fb2bfc-82be-47ab-b2ae-1b166fa20e51",
+      "id": "eec70311-4412-449e-a603-0073a3c85d5d",
       "name": "Merge Data",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        -7152,
-        4384
+        48,
+        1040
       ]
     },
     {
@@ -267,47 +267,47 @@
         },
         "options": {}
       },
-      "id": "d89aead0-ef6d-4100-9eb5-a336dc61cd64",
+      "id": "729dcdaa-e9a0-44b9-a21c-16162f6af2ec",
       "name": "4. Gotenberg (PDF)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        -7376,
-        4240
+        -176,
+        896
       ]
     },
     {
       "parameters": {
-        "jsCode": "const d = $json;\nconst html = `<html><body><h2>Hóa đơn P.${d.phong}</h2><p>Tổng: ${d.txt_tong}</p></body></html>`;\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
+        "jsCode": "const d = $json;\nconst html = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 40px; color: #333; }\n        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 16px; line-height: 24px; }\n        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 20px; }\n        .header h1 { margin: 0; color: #1e40af; font-size: 32px; }\n        .info-table { width: 100%; margin-bottom: 30px; }\n        .info-table td { padding: 5px; }\n        .billing-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }\n        .billing-table th, .billing-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }\n        .billing-table th { background-color: #f8fafc; color: #1e40af; font-weight: bold; }\n        .total-row { font-size: 18px; font-weight: bold; background-color: #e2e8f0; }\n        .total-row td { color: #dc2626; text-align: right; }\n        .footer { text-align: center; margin-top: 40px; font-size: 14px; color: #666; }\n        .qr-container { text-align: center; margin-top: 20px; }\n        .qr-container img { border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: white; }\n    </style>\n</head>\n<body>\n    <div class=\"invoice-box\">\n        <div class=\"header\">\n            <div>\n                <h1>HÓA ĐƠN THANH TOÁN</h1>\n                <p>Kỳ cước: Tháng ${d.thangDisplay}</p>\n            </div>\n            <div style=\"text-align: right;\">\n                <h2 style=\"margin: 0; color: #dc2626;\">Phòng: ${d.phong}</h2>\n            </div>\n        </div>\n        \n        <table class=\"info-table\">\n            <tr>\n                <td><strong>Khách hàng:</strong> ${d.hoTen}</td>\n                <td style=\"text-align: right;\"><strong>Ngày lập:</strong> ${new Date().toLocaleDateString('vi-VN')}</td>\n            </tr>\n        </table>\n\n        <table class=\"billing-table\">\n            <thead>\n                <tr>\n                    <th>Hạng mục</th>\n                    <th>Chỉ số đầu</th>\n                    <th>Chỉ số cuối</th>\n                    <th style=\"text-align: right;\">Thành tiền</th>\n                </tr>\n            </thead>\n            <tbody>\n                <tr>\n                    <td>Tiền thuê phòng</td>\n                    <td>-</td>\n                    <td>-</td>\n                    <td style=\"text-align: right;\">${d.txt_phong}</td>\n                </tr>\n                <tr>\n                    <td>Tiền điện</td>\n                    <td>${d.chi_so_dien_cu}</td>\n                    <td>${d.chi_so_dien_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_dien || 'Tính gộp'}</td>\n                </tr>\n                <tr>\n                    <td>Tiền nước</td>\n                    <td>${d.chi_so_nuoc_cu}</td>\n                    <td>${d.chi_so_nuoc_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_nuoc || 'Tính gộp'}</td>\n                </tr>\n                <tr class=\"total-row\">\n                    <td colspan=\"3\" style=\"text-align: right;\">TỔNG CỘNG:</td>\n                    <td>${d.txt_tong}</td>\n                </tr>\n            </tbody>\n        </table>\n\n        <div class=\"qr-container\">\n            <h3>Quét mã QR để thanh toán nhanh</h3>\n            <img src=\"${d.qrUrl}\" alt=\"VietQR\" width=\"250\" />\n            <p>Nội dung CK: <strong>ThanhToan P${d.phong}</strong></p>\n        </div>\n\n        <div class=\"footer\">\n            <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>\n            <p>Mọi thắc mắc xin vui lòng liên hệ Ban Quản Lý CLM.</p>\n        </div>\n    </div>\n</body>\n</html>`;\nreturn {\n  json: d,\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};"
       },
-      "id": "71754d5a-8014-454d-b6ad-8d1ae8c7172a",
+      "id": "8f133e44-1ac7-427c-bcc4-842f33b1d77c",
       "name": "3. Dàn trang HTML",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -7568,
-        4240
+        -368,
+        896
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $input.item.json;\nconst isAI = input.nguon === \"AI_OCR_ADMIN\";\n\nfunction getV(key) {\n    if (input[key] !== undefined && input[key] !== null) return input[key];\n    if (input.body && input.body[key] !== undefined) return input.body[key];\n    return 0; \n}\n\nconst phong = getV('phong') || getV('ma_phong') || \"?\";\nconst hoTen = getV('hoTen') || getV('ho_ten') || \"Khách hàng\";\nconst email = getV('email') || \"clm@example.com\";\n\nconst today = new Date();\nconst thangNam = getV('thangNam') || getV('thang_nam') || `${today.getMonth() + 1}/${today.getFullYear()}`;\n\nlet baseRent = Number(getV('tienPhong') || getV('tien_phong') || 0);\nlet tongTuReact = Number(getV('tongTien') || getV('tong_tien') || 0);\n\nlet val_dien = 0;\nlet val_nuoc = 0;\nlet finalTotal = 0;\n\nif (tongTuReact > 0 && !isAI) {\n    baseRent = tongTuReact;\n    finalTotal = tongTuReact;\n} else {\n    const sd = Number(getV('chiSoDienMoi')) - Number(getV('chiSoDienCu'));\n    const sn = Number(getV('chiSoNuocMoi')) - Number(getV('chiSoNuocCu'));\n\n    val_dien = Math.max(0, sd * 3500); \n    val_nuoc = Math.max(0, sn * 100000); \n\n    finalTotal = baseRent + val_dien + val_nuoc;\n}\n\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\nreturn {\n    json: {\n        ...input, \n        phong, hoTen, email,\n        is_auto: false,\n        val_phong: baseRent,\n        val_tong: finalTotal,\n        txt_phong: fmt(baseRent),\n        txt_tong: fmt(finalTotal),\n        thangDisplay: thangNam,\n        qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${finalTotal}&addInfo=ThanhToan_P${phong}&accountName=HUYNH%20NGOC%20HUY`,\n        chi_so_dien_cu: Number(getV('chiSoDienCu')),\n        chi_so_dien_moi: Number(getV('chiSoDienMoi')),\n        chi_so_nuoc_cu: Number(getV('chiSoNuocCu')),\n        chi_so_nuoc_moi: Number(getV('chiSoNuocMoi'))\n    }\n};"
+        "jsCode": "const input = $input.item.json;\nconst isAI = input.nguon === \"AI_OCR_ADMIN\" || input.nguon === \"AI_GEMINI_ADMIN\";\n\nfunction getV(key) {\n    if (input[key] !== undefined && input[key] !== null) return input[key];\n    if (input.body && input.body[key] !== undefined) return input.body[key];\n    return 0; \n}\n\nconst phong = getV('phong') || getV('ma_phong') || \"?\";\nconst hoTen = getV('hoTen') || getV('ho_ten') || \"Khách hàng\";\nconst email = getV('email') || \"clm@example.com\";\n\nconst today = new Date();\nconst thangNam = getV('thangNam') || getV('thang_nam') || `${today.getMonth() + 1}/${today.getFullYear()}`;\n\nlet baseRent = Number(getV('tienPhong') || getV('tien_phong') || 0);\nlet tongTuReact = Number(getV('tongTien') || getV('tong_tien') || 0);\n\nlet val_dien = 0;\nlet val_nuoc = 0;\nlet finalTotal = 0;\n\nif (tongTuReact > 0 && !isAI) {\n    baseRent = tongTuReact;\n    finalTotal = tongTuReact;\n} else {\n    const sd = Number(getV('chiSoDienMoi')) - Number(getV('chiSoDienCu'));\n    const sn = Number(getV('chiSoNuocMoi')) - Number(getV('chiSoNuocCu'));\n\n    val_dien = Math.max(0, sd * 3500); \n    val_nuoc = Math.max(0, sn * 100000); \n\n    finalTotal = baseRent + val_dien + val_nuoc;\n}\n\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\nreturn {\n    json: {\n        ...input, \n        phong, hoTen, email,\n        is_auto: false,\n        val_phong: baseRent,\n        val_tong: finalTotal,\n        txt_phong: fmt(baseRent),\n        txt_tong: fmt(finalTotal),\n        txt_dien: fmt(val_dien),\n        txt_nuoc: fmt(val_nuoc),\n        thangDisplay: thangNam,\n        qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${finalTotal}&addInfo=ThanhToan_P${phong}&accountName=HUYNH%20NGOC%20HUY`,\n        chi_so_dien_cu: Number(getV('chiSoDienCu')),\n        chi_so_dien_moi: Number(getV('chiSoDienMoi')),\n        chi_so_nuoc_cu: Number(getV('chiSoNuocCu')),\n        chi_so_nuoc_moi: Number(getV('chiSoNuocMoi'))\n    }\n};\n"
       },
-      "id": "59a95c90-1e56-438f-9142-44032b61f030",
+      "id": "04679274-6bb2-4f24-858b-2833173b1b12",
       "name": "2. Tính Toán & VietQR",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -7776,
-        4368
+        -576,
+        1024
       ]
     },
     {
       "parameters": {
         "sendTo": "={{ $('2. Tính Toán & VietQR').item.json.email }}",
         "subject": "=Hóa đơn tiền nhà P.{{ $('2. Tính Toán & VietQR').item.json.phong }} - Tháng {{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}",
-        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN P.{{ $('2. Tính Toán & VietQR').item.json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $('2. Tính Toán & VietQR').item.json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ <strong>{{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}</strong>, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_phong }}</li>\n      <li><b>Điện & Nước:</b> Tính theo thực tế (Đã gộp)</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $('2. Tính Toán & VietQR').item.json.txt_tong }}</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số và QR thanh toán, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>",
+        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN P.{{ $('2. Tính Toán & VietQR').item.json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $('2. Tính Toán & VietQR').item.json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ <strong>{{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}</strong>, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_phong }}</li>\n      <li><b>Tiền điện:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_dien || 'Tính theo thực tế' }}</li>\n      <li><b>Tiền nước:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_nuoc || 'Tính theo thực tế' }}</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $('2. Tính Toán & VietQR').item.json.txt_tong }}</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số và QR thanh toán, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>\n",
         "options": {
           "attachmentsUi": {
             "attachmentsBinary": [
@@ -316,30 +316,62 @@
           }
         }
       },
-      "id": "c3fb4810-9cbf-48e1-8fce-9121544b8592",
+      "id": "e415bf2d-a116-4a42-a1ca-a36b4b1b141d",
       "name": "Gửi Mail Hóa Đơn",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        -6368,
-        4384
+        832,
+        1040
       ],
       "webhookId": "73f26785-48d8-4bd3-ab1f-6a0959b8b773",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GDkRrIaMd4vssTbO",
+          "id": "mHOp1T0AYAe7EoTv",
           "name": "Gmail account"
         }
       }
     }
   ],
-  "pinData": {},
   "connections": {
+    "Lấy Tiền Nhà & Điện Cũ": {
+      "main": [
+        [
+          {
+            "node": "Manual: Set Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "gửi ảnh Telegram": {
       "main": [
         [
           {
-            "node": "AI Đọc Số (OCR.Space)",
+            "node": "Chuyển ảnh sang Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuyển ảnh sang Base64": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Bóc tách Dữ liệu",
             "type": "main",
             "index": 0
           }
@@ -357,22 +389,11 @@
         ]
       ]
     },
-    "AI Đọc Số (OCR.Space)": {
+    "Manual: Set Flag": {
       "main": [
         [
           {
-            "node": "Bóc tách Dữ liệu",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Lấy Tiền Nhà & Điện Cũ": {
-      "main": [
-        [
-          {
-            "node": "Manual: Set Flag",
+            "node": "2. Tính Toán & VietQR",
             "type": "main",
             "index": 0
           }
@@ -384,17 +405,6 @@
         [
           {
             "node": "Manual: Set Flag",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Manual: Set Flag": {
-      "main": [
-        [
-          {
-            "node": "2. Tính Toán & VietQR",
             "type": "main",
             "index": 0
           }
@@ -472,17 +482,9 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
-  },
-  "versionId": "330f4b05-f55a-44ce-a37c-5dd7f292d46e",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "d92e635d9923c5e33aeed71b490c99116d0f169f30a0e3b5c6dbc179b7236fd2"
-  },
-  "id": "8gY1u4LUK6tzD7uIWLxkU",
-  "tags": []
+    "instanceId": "99b801ad2317bd8fa417b21134ca8050bf3a38b35681c8d7793c3b6c4072a11b"
+  }
 }

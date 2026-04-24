@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="CoachPro Mngt - Property Management SaaS",
+    title="CLM Management - Property Management SaaS",
     description="Backend cung cấp API và kết nối chặt chẽ Webhook sang n8n",
     version="2.0.0",
     lifespan=lifespan,

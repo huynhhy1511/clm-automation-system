@@ -1,5 +1,5 @@
 {
-  "name": "CLM WORKLOW 6",
+  "name": "ALL",
   "nodes": [
     {
       "parameters": {
@@ -167,7 +167,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -269,7 +269,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -293,7 +293,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -317,7 +317,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -341,7 +341,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -372,8 +372,7 @@
           "message"
         ],
         "additionalFields": {
-          "download": true,
-          "userIds": "7035265746"
+          "download": true
         }
       },
       "id": "73f1e12c-9825-449e-bcd6-6ac9cd4b504e",
@@ -387,8 +386,8 @@
       "webhookId": "6769407f-6c79-4724-b5e4-8720e19d92d1",
       "credentials": {
         "telegramApi": {
-          "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "id": "Tn0VBXN7JQ1gcrWa",
+          "name": "Message"
         }
       }
     },
@@ -500,7 +499,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -1181,7 +1180,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -1204,7 +1203,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     },
@@ -1411,7 +1410,7 @@
       "credentials": {
         "telegramApi": {
           "id": "f6iYHNXLNipJrrZb",
-          "name": "Telegram account"
+          "name": "Main"
         }
       }
     }
@@ -1998,7 +1997,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "f2285ab3-297c-48bd-b0d9-cc3e728cf05e",
+  "versionId": "b7ac7ac4-ef3e-4987-adc4-4ca67a531d10",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "99b801ad2317bd8fa417b21134ca8050bf3a38b35681c8d7793c3b6c4072a11b"

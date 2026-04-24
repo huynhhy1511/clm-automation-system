@@ -21,7 +21,7 @@ export function AdminLayout() {
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />
         
         <div className="w-full px-8 mb-10 z-10">
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Coach<span className="text-primary font-black">Pro</span></h1>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">CLM<span className="text-primary font-black">Admin</span></h1>
         </div>
         
         <nav className="w-full flex-1 px-4 flex flex-col gap-2 z-10">

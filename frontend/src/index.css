@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Glassmorphism theme influenced by CoachPro (Blue version) */
+    /* Glassmorphism theme influenced by CLM (Blue version) */
     --background: 215 40% 95%;  /* Soft muted blue background */
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
