@@ -13,12 +13,84 @@ from app.models import BookingRequest, Room, User, Tenant, Contract
 from app.schemas import BookingRequestCreate, BookingRequestResponse, UserResponse as UserSchema
 from app.api.deps import get_current_admin
 from app.core.security import get_password_hash
+from app.core.config import settings
+import re
+from pydantic import BaseModel
+
+class OCRRequest(BaseModel):
+    base64_image: str
 
 router = APIRouter(prefix="/booking-requests", tags=["Booking Requests"])
 
 def generate_password(length=8):
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+@router.post("/ocr-cccd")
+async def ocr_cccd(request: OCRRequest):
+    if not settings.GOOGLE_VISION_API_KEY:
+        raise HTTPException(status_code=500, detail="Thiếu cấu hình GOOGLE_VISION_API_KEY")
+
+    # Clean base64 string if it contains the data URI scheme
+    base64_data = request.base64_image
+    if "base64," in base64_data:
+        base64_data = base64_data.split("base64,")[1]
+
+    url = f"https://vision.googleapis.com/v1/images:annotate?key={settings.GOOGLE_VISION_API_KEY}"
+    payload = {
+        "requests": [
+            {
+                "image": {"content": base64_data},
+                "features": [{"type": "DOCUMENT_TEXT_DETECTION"}]
+            }
+        ]
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, timeout=15.0)
+            response.raise_for_status()
+            data = response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi gọi Google Vision API: {str(e)}")
+
+    responses = data.get("responses", [])
+    if not responses or "textAnnotations" not in responses[0]:
+        raise HTTPException(status_code=400, detail="Không tìm thấy chữ trên ảnh")
+
+    raw_text = responses[0]["textAnnotations"][0]["description"]
+    lines = raw_text.split('\n')
+
+    # Regex trích xuất cơ bản
+    cccd_match = re.search(r'\d{12}', raw_text)
+    dob_match = re.search(r'(\d{2}/\d{2}/\d{4})', raw_text)
+
+    ho_ten = ""
+    for i, line in enumerate(lines):
+        if "Họ và tên" in line or "Full name" in line:
+            # Lấy dòng tiếp theo hoặc đoạn sau dấu :
+            if i + 1 < len(lines) and line.strip().endswith("tên"):
+                ho_ten = lines[i+1]
+            else:
+                ho_ten = re.sub(r'.*Họ và tên[:\s]*', '', line, flags=re.IGNORECASE)
+            break
+            
+    if not ho_ten:
+        # Fallback: Tìm dòng in hoa toàn bộ dài hơn 5 ký tự
+        for line in lines:
+            if re.match(r'^[A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ\s]{5,}$', line.strip()):
+                ho_ten = line.strip()
+                break
+
+    return {
+        "success": True,
+        "data": {
+            "so_cccd": cccd_match.group(0) if cccd_match else "",
+            "ngay_sinh": dob_match.group(0) if dob_match else "",
+            "ho_ten": ho_ten.strip(),
+            "raw_text": raw_text
+        }
+    }
 
 @router.post("/", response_model=BookingRequestResponse)
 async def create_booking_request(request: BookingRequestCreate, db: AsyncSession = Depends(get_db)):

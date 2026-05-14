@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     # Back-off/Return urls for PayOS
     PAYOS_RETURN_URL: str = "http://localhost:3000/payment-success"
     PAYOS_CANCEL_URL: str = "http://localhost:3000/payment-cancel"
+    
+    GOOGLE_VISION_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

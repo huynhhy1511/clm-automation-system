@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight, CheckCircle2, Home, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
+import { FaceVerification } from "@/components/FaceVerification";
 
 export function LandingPage() {
   const [rooms, setRooms] = useState<any[]>([]);
@@ -232,38 +233,34 @@ export function LandingPage() {
                        </div>
 
                        {/* Image Upload Area */}
-                       <div className="pt-2">
-                          <div className="space-y-2 mb-4">
-                            <label className="text-sm font-bold text-slate-700 block">Ảnh Khuôn Mặt Khách Thuê (Bắt buộc)</label>
-                            <label className={`border-2 border-dashed ${formData.anh_khuon_mat ? 'border-primary bg-primary/5' : 'border-slate-200'} rounded-xl h-24 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-colors relative overflow-hidden`}>
-                                {formData.anh_khuon_mat && <img src={formData.anh_khuon_mat} className="absolute inset-0 w-full h-full object-cover opacity-30" />}
-                                <PlusIcon isUploaded={!!formData.anh_khuon_mat} />
-                                <span className="text-xs font-bold text-slate-500 mt-1 z-10">{formData.anh_khuon_mat ? 'Đã tải lên Ảnh Mặt' : 'Chọn tỷ lệ 1:1 rõ mặt'}</span>
-                                <input required type="file" accept="image/*" onChange={e=>handleFileChange(e, 'anh_khuon_mat')} className="hidden" />
-                            </label>
-                          </div>
+                       <div className="pt-2 space-y-4">
+                          <FaceVerification 
+                            onVerified={(cccd, face, ocrData) => {
+                                setFormData(prev => ({
+                                    ...prev, 
+                                    cccd_truoc: cccd, 
+                                    anh_khuon_mat: face,
+                                    ho_ten: ocrData?.ho_ten || prev.ho_ten,
+                                    so_cccd: ocrData?.so_cccd || prev.so_cccd,
+                                    ngay_sinh: ocrData?.ngay_sinh ? ocrData.ngay_sinh.split('/').reverse().join('-') : prev.ngay_sinh
+                                }));
+                            }} 
+                          />
                           
-                          <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                  <label className="text-sm font-bold text-slate-700 block">Ảnh CCCD Mặt Trước</label>
-                                  <label className={`border-2 border-dashed ${formData.cccd_truoc ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200'} rounded-xl h-20 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-colors`}>
-                                    <PlusIcon isUploaded={!!formData.cccd_truoc} />
-                                    <input required type="file" accept="image/*" onChange={e=>handleFileChange(e, 'cccd_truoc')} className="hidden" />
-                                  </label>
-                              </div>
-                              <div className="space-y-2">
-                                  <label className="text-sm font-bold text-slate-700 block">Ảnh CCCD Mặt Sau</label>
-                                  <label className={`border-2 border-dashed ${formData.cccd_sau ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200'} rounded-xl h-20 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-colors`}>
-                                    <PlusIcon isUploaded={!!formData.cccd_sau} />
-                                    <input required type="file" accept="image/*" onChange={e=>handleFileChange(e, 'cccd_sau')} className="hidden" />
-                                  </label>
-                              </div>
+                          <div className="space-y-2">
+                              <label className="text-sm font-bold text-slate-700 block">Ảnh CCCD Mặt Sau</label>
+                              <label className={`border-2 border-dashed ${formData.cccd_sau ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200'} rounded-xl h-20 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-colors relative overflow-hidden`}>
+                                {formData.cccd_sau && <img src={formData.cccd_sau} className="absolute inset-0 w-full h-full object-cover opacity-30" />}
+                                <PlusIcon isUploaded={!!formData.cccd_sau} />
+                                <span className="text-xs font-bold text-slate-500 mt-1 z-10">{formData.cccd_sau ? 'Đã tải lên' : 'Mặt sau (Không bắt buộc AI)'}</span>
+                                <input required type="file" accept="image/*" onChange={e=>handleFileChange(e, 'cccd_sau')} className="hidden" />
+                              </label>
                           </div>
                        </div>
 
                        <div className="pt-6 flex justify-end gap-3">
                           <button type="button" onClick={() => setShowModal(false)} className="px-6 py-3 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">Hủy</button>
-                          <button disabled={submitting} type="submit" className="px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all flex items-center gap-2">
+                          <button disabled={submitting || !formData.cccd_truoc || !formData.anh_khuon_mat} type="submit" className="px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                              {submitting ? 'Đang nén & Gửi...' : 'Gửi Yêu Cầu Thuê'}
                           </button>
                        </div>
