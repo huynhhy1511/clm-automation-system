@@ -35,10 +35,11 @@ export function BillingPage() {
   const fetchActiveRooms = async () => {
     try {
       const res = await api.get("/bills/active-rooms");
-      setActiveRooms(res.data);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setActiveRooms(data);
       
       const states: Record<number, RowState> = {};
-      res.data.forEach((room: ActiveRoom) => {
+      data.forEach((room: ActiveRoom) => {
         states[room.room_id] = {
           new_electricity: "",
           submitting: false,

@@ -12,18 +12,22 @@ export function DashboardPage() {
     const fetchRooms = async () => {
       try {
         const res = await api.get("/rooms/");
-        setRooms(res.data);
+        // Đảm bảo luôn là array, tránh lỗi .filter
+        setRooms(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Lỗi lấy danh sách phòng", err);
+        setRooms([]);
       }
     };
 
     const fetchContracts = async () => {
       try {
         const res = await api.get("/contracts/");
-        setContracts(res.data);
+        // Đảm bảo luôn là array, tránh lỗi .filter
+        setContracts(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Lỗi lấy danh sách hợp đồng", err);
+        setContracts([]);
       }
     };
 
