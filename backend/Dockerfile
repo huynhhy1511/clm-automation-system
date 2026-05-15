@@ -13,5 +13,5 @@ COPY . .
 # Expose the API port
 EXPOSE 8000
 
-# Command to run the application using Uvicorn with hot reload
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Command to run the application using Uvicorn in production (no reload)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
