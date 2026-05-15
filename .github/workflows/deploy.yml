@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Cập nhật lên v4
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
@@ -18,17 +18,19 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
+          # Một số VPS cần cấu hình này nếu dùng password
+          envs: GITHUB_SHA
           script: |
+            echo "--- Dang ket noi vao VPS ---"
             cd ${{ secrets.PROJECT_PATH }}
             
-            echo "--- Pulling latest code from GitHub ---"
+            echo "--- Dang cap nhat code ---"
             git pull origin main
             
-            echo "--- Rebuilding and restarting containers ---"
-            # Sử dụng --build để cập nhật nếu có thay đổi trong Dockerfile hoặc source code
+            echo "--- Dang khoi dong lai Docker ---"
             docker compose up -d --build
             
-            echo "--- Cleaning up unused images ---"
+            echo "--- Dang don dep image cu ---"
             docker image prune -f
             
-            echo "--- Deployment Complete! ---"
+            echo "--- Deploy Thanh Cong! ---"
