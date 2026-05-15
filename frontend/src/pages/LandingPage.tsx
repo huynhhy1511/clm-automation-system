@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, CheckCircle2, Home, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, Home, Upload, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { FaceVerification } from "@/components/FaceVerification";
@@ -8,6 +8,7 @@ export function LandingPage() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showRoomDetails, setShowRoomDetails] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Form state
@@ -129,21 +130,34 @@ export function LandingPage() {
             {loading ? (
                 <div className="col-span-3 text-center py-20 text-slate-400">Đang tải biểu giá phòng...</div>
             ) : rooms.map(room => (
-               <div key={room.id} className="glass-card p-6 flex flex-col hover:-translate-y-1 transition-transform duration-300">
-                  <div className="flex justify-between items-start mb-6">
-                     <h3 className="text-2xl font-black text-slate-800">{room.ma_phong}</h3>
-                     <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100">Phòng trống</span>
+               <div key={room.id} className="glass-card p-0 flex flex-col hover:-translate-y-1 transition-transform duration-300 overflow-hidden cursor-pointer" onClick={() => { setSelectedRoom(room); setShowRoomDetails(true); }}>
+                  <div className="h-48 bg-slate-200 relative">
+                     {room.anh_phong && room.anh_phong.length > 0 ? (
+                        <img src={room.anh_phong[0]} className="w-full h-full object-cover" />
+                     ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                           <Home size={40} className="opacity-20" />
+                        </div>
+                     )}
+                     <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100 shadow-sm backdrop-blur-md">
+                        Phòng trống
+                     </div>
                   </div>
-                  <div className="flex items-end gap-1 mb-8">
-                     <span className="text-3xl font-black text-primary">{room.gia_thue.toLocaleString()}đ</span>
-                     <span className="text-slate-400 font-medium pb-1">/tháng</span>
+                  <div className="p-6 flex flex-col flex-grow">
+                     <h3 className="text-2xl font-black text-slate-800 mb-2">{room.ma_phong}</h3>
+                     <p className="text-slate-500 text-sm line-clamp-2 mb-4">{room.mo_ta || "Chưa có mô tả"}</p>
+                     
+                     <div className="flex items-end gap-1 mb-6 mt-auto">
+                        <span className="text-3xl font-black text-primary">{room.gia_thue.toLocaleString()}đ</span>
+                        <span className="text-slate-400 font-medium pb-1">/tháng</span>
+                     </div>
+                     <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedRoom(room); setShowModal(true); setShowRoomDetails(false); }}
+                        className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors group"
+                     >
+                        Đăng ký thuê ngay <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                     </button>
                   </div>
-                  <button 
-                     onClick={() => { setSelectedRoom(room); setShowModal(true); }}
-                     className="mt-auto w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors group"
-                  >
-                     Đăng ký thuê ngay <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                  </button>
                </div>
             ))}
             {rooms.length === 0 && !loading && (
@@ -151,6 +165,54 @@ export function LandingPage() {
             )}
          </div>
       </main>
+
+      {/* Room Details Modal */}
+      {showRoomDetails && selectedRoom && !showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowRoomDetails(false)}></div>
+           <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+               <div className="flex justify-between items-start mb-6">
+                  <div>
+                     <h3 className="text-3xl font-black text-slate-800 mb-2">Phòng {selectedRoom.ma_phong}</h3>
+                     <div className="flex items-end gap-1">
+                        <span className="text-3xl font-black text-primary">{selectedRoom.gia_thue.toLocaleString()}đ</span>
+                        <span className="text-slate-400 font-medium pb-1">/tháng</span>
+                     </div>
+                  </div>
+                  <button onClick={() => setShowRoomDetails(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+                     <X size={20} />
+                  </button>
+               </div>
+               
+               {selectedRoom.anh_phong && selectedRoom.anh_phong.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+                     {selectedRoom.anh_phong.map((img: string, i: number) => (
+                        <div key={i} className={`rounded-2xl overflow-hidden ${i === 0 ? 'col-span-2 md:col-span-3 h-64 md:h-80' : 'h-32'}`}>
+                           <img src={img} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                        </div>
+                     ))}
+                  </div>
+               ) : (
+                  <div className="h-64 bg-slate-100 rounded-2xl flex items-center justify-center mb-8 text-slate-400">
+                     <Home size={64} className="opacity-20" />
+                     <span className="mt-4 font-medium opacity-50 block">Chưa có ảnh</span>
+                  </div>
+               )}
+
+               <div className="mb-8">
+                  <h4 className="text-lg font-bold text-slate-800 mb-2">Mô tả chi tiết</h4>
+                  <p className="text-slate-600 whitespace-pre-line leading-relaxed">{selectedRoom.mo_ta || "Phòng chưa có mô tả chi tiết."}</p>
+               </div>
+
+               <button 
+                  onClick={() => { setShowRoomDetails(false); setShowModal(true); }}
+                  className="w-full py-4 bg-primary text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors text-lg shadow-lg shadow-primary/30 active:scale-[0.98]"
+               >
+                  Đăng ký thuê phòng này <ArrowRight size={20} />
+               </button>
+           </div>
+        </div>
+      )}
 
       {/* Booking Modal */}
       {showModal && selectedRoom && (

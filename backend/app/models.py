@@ -46,6 +46,8 @@ class Room(Base):
     ma_phong = Column(String(20), unique=True, index=True, nullable=False)
     gia_thue = Column(Float, nullable=False) # Đã đổi gia_thue_co_ban -> gia_thue
     trang_thai = Column(String(50), default="Trống") # Trống, Đang thuê, Đang sửa chữa
+    mo_ta = Column(Text, nullable=True)
+    anh_phong = Column(JSON, nullable=True)
     
     contracts = relationship("Contract", back_populates="room")
     bills = relationship("UtilityBill", back_populates="room")

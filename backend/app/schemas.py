@@ -52,6 +52,8 @@ class RoomBase(BaseModel):
     ma_phong: str
     gia_thue: float
     trang_thai: Optional[str] = "Trống"
+    mo_ta: Optional[str] = None
+    anh_phong: Optional[List[str]] = []
 
 class RoomCreate(RoomBase):
     pass

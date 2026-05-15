@@ -32,6 +32,25 @@ async def list_rooms(db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(models.Room))
     return res.scalars().all()
 
+@router.put("/{room_id}", response_model=schemas.RoomResponse)
+async def update_room(
+    room_id: int,
+    room_data: schemas.RoomCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    res = await db.execute(select(models.Room).where(models.Room.id == room_id))
+    room = res.scalar_one_or_none()
+    
+    if not room:
+        raise HTTPException(status_code=404, detail="Phòng không tồn tại")
+        
+    for key, value in room_data.model_dump(exclude_unset=True).items():
+        setattr(room, key, value)
+        
+    await db.commit()
+    await db.refresh(room)
+    return room
+
 from app.services.handover_service import perform_handover
 
 @router.post("/{room_id}/handover")
