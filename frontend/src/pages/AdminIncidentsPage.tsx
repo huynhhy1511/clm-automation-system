@@ -20,7 +20,7 @@ export function AdminIncidentsPage() {
   const fetchIncidents = async () => {
     try {
       const res = await api.get("/client/incidents/"); // Backend filters correctly
-      setIncidents(res.data);
+      setIncidents(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Lỗi lấy sự cố", err);
     } finally {

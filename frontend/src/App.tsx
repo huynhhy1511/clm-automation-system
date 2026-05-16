@@ -13,6 +13,7 @@ import { AdminRequestsPage } from "./pages/AdminRequestsPage";
 import { ClientProfilePage } from "./pages/ClientProfilePage";
 import { AdminIncidentsPage } from "./pages/AdminIncidentsPage";
 import { ClientBillingPage } from "./pages/ClientBillingPage";
+import { AdminLoginPage } from "./pages/AdminLoginPage";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
       {/* Public Pages */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
 
       {/* Admin Protected Layout */}
       <Route path="/admin" element={<AdminLayout />}>

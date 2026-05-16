@@ -1,8 +1,20 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Zap, AlertTriangle, Search, Bell, Home } from "lucide-react";
+import { Outlet, Link, useLocation, Navigate, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Users, FileText, Zap, AlertTriangle, Search, Bell, Home, LogOut } from "lucide-react";
 
 export function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Bảo vệ route admin — redirect về trang đăng nhập nếu chưa xác thực
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAdmin");
+    navigate("/admin/login");
+  };
 
   const navItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -72,6 +84,13 @@ export function AdminLayout() {
               </div>
               <span className="text-sm font-semibold text-slate-700">Admin User</span>
             </div>
+            <button
+              onClick={handleLogout}
+              title="Đăng xuất"
+              className="text-slate-400 hover:text-rose-500 transition-colors"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </header>
 

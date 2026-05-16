@@ -21,11 +21,18 @@ class HandoverRequest(BaseModel):
 
 @router.post("/", response_model=schemas.RoomResponse)
 async def create_room(room: schemas.RoomCreate, db: AsyncSession = Depends(get_db)):
-    new_room = models.Room(**room.model_dump())
-    db.add(new_room)
-    await db.commit()
-    await db.refresh(new_room)
-    return new_room
+    try:
+        new_room = models.Room(**room.model_dump())
+        db.add(new_room)
+        await db.commit()
+        await db.refresh(new_room)
+        return new_room
+    except Exception as e:
+        await db.rollback()
+        err = str(e).lower()
+        if "unique" in err or "duplicate" in err:
+            raise HTTPException(status_code=400, detail=f"Tên phòng '{room.ma_phong}' đã tồn tại. Vui lòng chọn tên khác.")
+        raise HTTPException(status_code=500, detail="Lỗi tạo phòng. Vui lòng thử lại.")
 
 @router.get("/", response_model=list[schemas.RoomResponse])
 async def list_rooms(db: AsyncSession = Depends(get_db)):
@@ -47,9 +54,26 @@ async def update_room(
     for key, value in room_data.model_dump(exclude_unset=True).items():
         setattr(room, key, value)
         
-    await db.commit()
-    await db.refresh(room)
+    try:
+        await db.commit()
+        await db.refresh(room)
+    except Exception as e:
+        await db.rollback()
+        err = str(e).lower()
+        if "unique" in err or "duplicate" in err:
+            raise HTTPException(status_code=400, detail=f"Tên phòng đã tồn tại. Vui lòng chọn tên khác.")
+        raise HTTPException(status_code=500, detail="Lỗi cập nhật phòng.")
     return room
+
+@router.delete("/{room_id}")
+async def delete_room(room_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(models.Room).where(models.Room.id == room_id))
+    room = res.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=404, detail="Phòng không tồn tại")
+    await db.delete(room)
+    await db.commit()
+    return {"message": "Xóa phòng thành công"}
 
 from app.services.handover_service import perform_handover
 

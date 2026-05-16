@@ -22,11 +22,23 @@ export function RoomsPage() {
   const fetchRooms = async () => {
     try {
       const res = await api.get("/rooms/");
-      setRooms(res.data);
+      // Đảm bảo luôn là array — tránh lỗi .map / .filter
+      setRooms(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching rooms", err);
+      setRooms([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (room: Room) => {
+    if (!window.confirm(`Xóa phòng "${room.ma_phong}"?\n\nHành động này không thể hoàn tác.`)) return;
+    try {
+      await api.delete(`/rooms/${room.id}`);
+      fetchRooms();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Đã xảy ra lỗi khi xóa phòng.");
     }
   };
 
@@ -147,6 +159,9 @@ export function RoomsPage() {
                   <div className="flex gap-2 items-center">
                      <button onClick={() => openEditModal(room)} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors" title="Chỉnh sửa phòng">
                         <Edit2 size={16} />
+                     </button>
+                     <button onClick={() => handleDelete(room)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors" title="Xóa phòng">
+                        <Trash2 size={16} />
                      </button>
                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
                        room.trang_thai === "Trống" ? "text-emerald-600 bg-emerald-50 border-emerald-200" :

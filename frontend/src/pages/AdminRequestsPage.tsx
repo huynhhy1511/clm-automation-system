@@ -14,7 +14,7 @@ export function AdminRequestsPage() {
   const fetchRequests = async () => {
     try {
       const res = await api.get("/booking-requests/");
-      setRequests(res.data);
+      setRequests(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error(error);
     } finally {

@@ -22,7 +22,7 @@ export function ContractsPage() {
   const fetchContracts = async () => {
     try {
       const res = await api.get("/contracts/");
-      setContracts(res.data);
+      setContracts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Lỗi lấy danh sách hợp đồng", err);
     } finally {
