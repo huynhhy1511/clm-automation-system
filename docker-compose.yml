@@ -44,6 +44,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       # Link kết nối từ BE sang DB (nhìn kỹ tên user, pass, db trùng với ở trên)
       - DATABASE_URL=postgresql://admin:adminpassword@postgres:5432/clm_system_db
