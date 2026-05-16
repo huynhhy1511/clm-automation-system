@@ -1,0 +1,1053 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tao-hop-dong",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook (FastAPI gọi)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1712,
+        144
+      ],
+      "id": "36e33033-82b9-4cf0-b8fc-8f90481dea5a",
+      "webhookId": "ebd87cc6-0073-4bdc-9cb7-33a033926153"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d = $input.item.json.body;\n\n// Hàm format số tiền thành chuẩn VN\nconst fmt = (n) => {\n    if (!n) return '....................';\n    return new Intl.NumberFormat('vi-VN').format(n);\n};\n\nd.giaThueFormatted = fmt(d.giaThue);\n\n// TÍNH TIỀN & TẠO QR\nconst tienPhaiDong = Number(d.giaThue || 0);\nd.tienPhaiDongFormatted = fmt(tienPhaiDong);\n\n// ƯU TIÊN DÙNG CHUỖI VIETQR ĐỂ QUÉT BẰNG APP NGÂN HÀNG\nif (d.payosQr) {\n    d.qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(d.payosQr)}`;\n} else if (d.payosUrl) {\n    d.qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(d.payosUrl)}`;\n} else {\n    d.qrUrl = 'https://payos.vn/error';\n}\n\n\n// Lấy ngày tháng năm hiện tại\nconst today = new Date();\nconst day = String(today.getDate()).padStart(2, '0');\nconst month = String(today.getMonth() + 1).padStart(2, '0');\nconst year = today.getFullYear();\n\nd.soThangText = (d.soThang || 12) + ' tháng';\n\n// Khung HTML giữ nguyên format MS Word của ông, chỉ bỏ dòng Tiền cọc\nd.htmlContract = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  * { box-sizing: border-box; }\n  body { \n    font-family: \"Times New Roman\", Times, serif; \n    font-size: 14pt; \n    line-height: 1.3; \n    margin: 40px; \n    color: #000; \n  }\n  \n  /* Các class tiện ích */\n  .center { text-align: center !important; }\n  .right { text-align: right !important; }\n  .bold { font-weight: bold; }\n  .italic { font-style: italic; }\n  .uppercase { text-transform: uppercase; }\n  .underline { text-decoration: underline; }\n\n  /* FIX LỖI GIÃN CHỮ: Chuyển mặc định về căn trái, chỉ justify đoạn văn dài */\n  .justify-text { text-align: justify; } \n  \n  h1 { font-size: 14pt; margin: 0; padding: 0; }\n  h2 { font-size: 16pt; margin: 20px 0 15px 0; padding: 0; }\n  \n  /* Ép tất cả thẻ p căn trái để không bị kéo giãn chữ */\n  p { margin: 6px 0; text-align: left; } \n\n  .indent { padding-left: 20px; }\n  .indent-more { padding-left: 40px; }\n\n  /* CSS CHO PHẦN CHỮ KÝ */\n  .signatures { display: flex; justify-content: space-between; margin-top: 40px; }\n  .sig-box { width: 45%; text-align: center; }\n  .spacing-bottom { margin-bottom: 10px; }\n  \n  /* STYLE CHỮ KÝ VIẾT TAY (Mực xanh, nghiêng, đổ bóng nhẹ) */\n  .handwritten {\n    font-family: \"Brush Script MT\", \"Lucida Handwriting\", cursive;\n    font-size: 30pt;\n    color: #1e3a8a; \n    display: block;\n    transform: rotate(-4deg);\n    margin: 15px 0;\n    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);\n  }\n  /* STYLE CON DẤU XÁC THỰC (Mực đỏ mộc) */\n  .admin-seal {\n    color: #dc2626;\n    font-size: 10pt;\n    font-weight: bold;\n    border: 2px solid #dc2626;\n    padding: 3px 8px;\n    display: inline-block;\n    border-radius: 4px;\n    transform: rotate(8deg);\n    margin-bottom: -10px;\n  }\n</style>\n</head>\n<body>\n  <div class=\"center\">\n    <h1 class=\"bold uppercase\">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h1>\n    <p class=\"bold underline center\">Độc lập – Tự do – Hạnh phúc</p>\n  </div>\n\n  <h2 class=\"center bold uppercase\">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h2>\n  <div class=\"indent\">\n    <p>Hôm nay, ngày ${day} tháng ${month} năm ${year}; tại địa chỉ: ..........................</p>\n    <p>Chúng tôi gồm:..........................................................................</p>\n  </div>\n  <p class=\"bold\">1. Đại diện bên cho thuê phòng trọ (Bên A):</p>\n  <div class=\"indent\">\n      <p>Ông/bà: <b>Huỳnh Ngọc Huy</b> <span style=\"float:right\">Sinh ngày: ....................................</span></p>\n      <p>Nơi đăng ký HK:......................................................................................................................</p>\n      <p>CMND/CCCD số: .................................... cấp ngày .......................... tại: ...................................................</p>\n      <p>Số điện thoại: .......................................................................</p>\n  </div>\n\n  <p class=\"bold\" style=\"margin-top: 10px;\">2. Bên thuê phòng trọ (Bên B):</p>\n  <div class=\"indent\">\n      <p>Ông/bà: <b>${d.hoTen || '........................................'}</b> <span style=\"float:right\">Sinh ngày: ${d.ngaySinh || '....................................'}</span></p>\n      <p>Nơi đăng ký HK thường trú: ${d.thuongTru || '...................................................................................................'}</p>\n      <p>Số CMND/CCCD: <b>${d.soCccd || '....................................'}</b> cấp ngày: ${d.ngayCap || '....................'} tại: ${d.noiCap || '....................'}</p>\n      <p>Số điện thoại: <b>${d.sdt || '................................................'}</b></p>\n  </div>\n\n  <div class=\"indent\" style=\"margin-top: 15px;\">\n      <p class=\"justify-text\">Sau khi bàn bạc trên tinh thần dân chủ, hai bên cùng có lợi, cùng thống nhất như sau:</p>\n      <p class=\"justify-text\">Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ................................................................................</p>\n      \n      <div class=\"indent\">\n          <p>- Phòng số: <b>${d.phong || '...........'}</b></p>\n          <p>- Giá thuê: <b>${d.giaThueFormatted} đ/tháng</b></p>\n          <p>- Hình thức thanh toán: ....................................................................................................................</p>\n          <p>- Tiền điện: 3.500 đ/kwh tính theo chỉ số công tơ, thanh toán vào cuối các tháng.</p>\n          <p>- Tiền nước: 100.000 đ/người thanh toán vào đầu các tháng.</p>\n          <p>- Thời hạn thuê: <b>${d.soThangText}</b>, bắt đầu tính tiền từ ngày: <b>${d.ngayBatDau || '....................'}</b></p>\n      </div>\n  </div>\n\n  <p class=\"bold uppercase underline\" style=\"margin-top: 20px;\">TRÁCH NHIỆM CỦA CÁC BÊN</p>\n\n  <p class=\"bold\">* Trách nhiệm của bên A:</p>\n  <div class=\"indent\">\n      <p class=\"justify-text\">- Tạo mọi điều kiện thuận lợi để bên B thực hiện theo hợp đồng.</p>\n      <p class=\"justify-text\">- Cung cấp nguồn điện, nước, wifi cho bên B sử dụng.</p>\n  </div>\n\n  <p class=\"bold\" style=\"margin-top: 10px;\">* Trách nhiệm của bên B:</p>\n  <div class=\"indent\">\n      <p class=\"justify-text\">- Thanh toán đầy đủ các khoản tiền theo đúng thỏa thuận.</p>\n      <p class=\"justify-text\">- Bảo quản các trang thiết bị và cơ sở vật chất của bên A trang bị cho ban đầu (làm hỏng phải sửa, mất phải đền).</p>\n      <p class=\"justify-text\">- Không được tự ý sửa chữa, cải tạo cơ sở vật chất khi chưa được sự đồng ý của bên A.</p>\n      <p class=\"justify-text\">- Giữ gìn vệ sinh trong và ngoài khuôn viên của phòng trọ.</p>\n      <p class=\"justify-text\">- Bên B phải chấp hành mọi quy định của pháp luật Nhà nước và quy định của địa phương.</p>\n      <p class=\"justify-text\">- Nếu bên B cho khách ở qua đêm thì phải báo và được sự đồng ý của chủ nhà đồng thời phải chịu trách nhiệm về các hành vi vi phạm pháp luật của khách trong thời gian ở lại.</p>\n  </div>\n\n  <p class=\"bold uppercase underline\" style=\"margin-top: 20px;\">TRÁCH NHIỆM CHUNG</p>\n  <div class=\"indent\">\n      <p class=\"justify-text\">- Hai bên phải tạo điều kiện cho nhau thực hiện hợp đồng.</p>\n      <p class=\"justify-text\">- Trong thời gian hợp đồng còn hiệu lực nếu bên nào vi phạm các điều khoản đã thỏa thuận thì bên còn lại có quyền đơn phương chấm dứt hợp đồng; nếu sự vi phạm hợp đồng đó gây tổn thất cho bên bị vi phạm hợp đồng thì bên vi phạm hợp đồng phải bồi thường thiệt hại.</p>\n      <p class=\"justify-text\">- Một trong hai bên muốn chấm dứt hợp đồng trước thời hạn thì phải báo trước cho bên kia ít nhất 30 ngày và hai bên phải có sự thống nhất.</p>\n      <p class=\"justify-text\">- Bên nào vi phạm điều khoản chung thì phải chịu trách nhiệm trước pháp luật.</p>\n      <p class=\"justify-text\">- Hợp đồng được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ một bản.</p>\n  </div>\n\n  <div class=\"signatures\">\n      <div class=\"sig-box\">\n          <p class=\"bold center\">ĐẠI DIỆN BÊN B</p>\n          <p class=\"italic spacing-bottom center\">(Ký, ghi rõ họ tên)</p>\n          <span class=\"handwritten\">${d.hoTen || ''}</span>\n          <p class=\"bold center\">${d.hoTen || ''}</p>\n      </div>\n      <div class=\"sig-box\">\n          <p class=\"bold center\">ĐẠI DIỆN BÊN A</p>\n          <p class=\"italic spacing-bottom center\">(Ký, ghi rõ họ tên)</p>\n          <div class=\"center\"><span class=\"admin-seal\">ĐÃ XÁC THỰC</span></div>\n          <span class=\"handwritten\">Huy Huỳnh</span>\n          <p class=\"bold center\">Huỳnh Ngọc Huy</p>\n      </div>\n  </div>\n</body>\n</html>`;\n\nreturn d;"
+      },
+      "name": "Format & Tạo HTML Hợp Đồng",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        144
+      ],
+      "id": "5ff087d0-2dcb-4809-a5cc-62c20807c6bb"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Lấy chuỗi HTML từ Node tạo hợp đồng\nconst htmlContent = $json.htmlContract;\n\n// 2. Ép nó thành Buffer chuẩn của Node.js\nconst buffer = Buffer.from(htmlContent, 'utf-8');\n\n// 3. Đóng gói thành file binary an toàn tuyệt đối bằng hàm prepareBinaryData\nconst binaryData = await this.helpers.prepareBinaryData(\n  buffer, \n  'index.html', \n  'text/html'\n);\n\n// 4. Truyền đi tiếp\nreturn {\n  json: $json,\n  binary: {\n    indexHtml: binaryData\n  }\n};"
+      },
+      "name": "HTML String → Binary File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1328,
+        144
+      ],
+      "id": "c9f74a39-eaf6-4591-9b7c-c1ebd250964c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://gotenberg:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "indexHtml"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Gotenberg: HTML → PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -1104,
+        144
+      ],
+      "id": "eac324f6-8cfc-4751-acfe-8986a611d4d0"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Chỉ định ĐÍCH DANH tên gói hàng mà Gotenberg trả về (mặc định là 'data')\nconst binaryKey = 'data';\n\n// Kiểm tra xem Gotenberg có thực sự nhả file vào đây chưa\nif (!$input.item.binary || !$input.item.binary[binaryKey]) {\n  throw new Error(\"Gotenberg chưa trả file về biến 'data'. Hãy kiểm tra Node Gotenberg (Response Format phải là File).\");\n}\n\n// 2. Lấy bộ đệm (Buffer) của ĐÚNG file PDF đó\nconst pdfBuffer = await this.helpers.getBinaryDataBuffer(0, binaryKey);\n\n// 3. Kiểm tra chéo xem có phải PDF xịn không\nconst pdfBase64 = pdfBuffer.toString('base64');\nif (!pdfBase64.startsWith('JVBERi0')) {\n    const errorText = pdfBuffer.toString('utf-8');\n    throw new Error(\"Lỗi bốc nhầm file hoặc file hỏng: \" + errorText.substring(0, 100));\n}\n\n// 4. Lấy lại thông tin khách hàng từ Node tạo hợp đồng\nconst prevData = $('Format & Tạo HTML Hợp Đồng').item.json;\n\n// 5. Đóng gói file PDF hoàn hảo\nconst fileName = `Hop_Dong_Phong_${prevData.phong || 'X'}.pdf`;\nconst cleanPdfBinary = await this.helpers.prepareBinaryData(\n  pdfBuffer, \n  fileName, \n  'application/pdf'\n);\n\n// 6. Xóa bỏ file HTML cũ đi cho nhẹ máy, chỉ truyền PDF đi tiếp\nreturn {\n  json: {\n    ...prevData,\n    pdfBase64: pdfBase64\n  },\n  binary: {\n    data: cleanPdfBinary\n  }\n};"
+      },
+      "name": "Lấy PDF Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        144
+      ],
+      "id": "f9e2a142-3d2d-45ab-9fd1-02cebe672dad"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/contracts/save-pdf",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contract_id",
+              "value": "={{ $json.contractId }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Lưu PDF vào Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -704,
+        144
+      ],
+      "id": "3dc949ef-cd26-4d74-b861-cfd7878d3124"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}",
+        "subject": "=🎉 Hợp đồng thuê phòng {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }} ",
+        "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'>\n  <div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'>\n    <h2 style='color:white;margin:0'>🏠 Hợp đồng thuê phòng P.{{ $json.phong }}</h2>\n  </div>\n  <div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'>\n    <p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p>\n    <p>Yêu cầu thuê phòng của bạn đã được duyệt. Vui lòng kiểm tra <b>File PDF hợp đồng điện tử đính kèm</b> (đã có chữ ký của chủ nhà).</p>\n    \n    <div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;text-align:center;'>\n      <b style='color:#dc2626;font-size:18px;'>THANH TOÁN ĐỂ HOÀN TẤT NHẬN PHÒNG</b><br>\n      <p>Tổng tiền cần đóng (Tháng đầu tiên): <b style='font-size:20px;'>{{ $json.tienPhaiDongFormatted }} đ</b></p>\n      <img src=\"{{ $json.qrUrl }}\" width=\"250\" style=\"border: 2px solid #1e40af; border-radius: 8px; margin-top: 10px;\">\n      <p style='font-size: 13px; color: #64748b;'>Quét mã QR để thanh toán. Hệ thống sẽ tự động bàn giao phòng & gửi tài khoản cho bạn sau khi nhận được tiền.</p>\n    </div>\n  </div>\n</div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "name": "Gửi Mail + PDF Hợp Đồng",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        144
+      ],
+      "id": "7a16405d-e44d-4867-a8a1-f76c92dc9a7e",
+      "webhookId": "90d7d525-f661-42a5-b1c9-b64189d15bcd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1003790123986",
+        "text": "=✅ Xử lý hợp đồng xong!\n👤 {{ $('Format & Tạo HTML Hợp Đồng').item.json.hoTen }}\n🏠 Phòng: {{ $('Format & Tạo HTML Hợp Đồng').item.json.phong }}\n📧 Email + PDF gửi tới: {{ $('Format & Tạo HTML Hợp Đồng').item.json.email }}\n💾 PDF đã lưu DB (Contract #{{ $('Format & Tạo HTML Hợp Đồng').item.json.contractId }})",
+        "additionalFields": {}
+      },
+      "name": "Báo cáo Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        144
+      ],
+      "id": "68e09e28-6247-4ad9-939c-c835b80d1efb",
+      "webhookId": "03caecf4-5f9f-4641-8ec4-ea986b4ee60e",
+      "credentials": {
+        "telegramApi": {
+          "id": "f6iYHNXLNipJrrZb",
+          "name": "Main"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"success\", \"message\": \"PDF lưu DB và Email đã gửi!\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d9e22bea-7481-4ddb-98a5-7a4eb48ef7f0",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Lấy toàn bộ dữ liệu khách hàng (JSON) từ node Lấy PDF Base64\nconst fullData = $('Lấy PDF Base64').item.json;\n\n// 2. Lấy file PDF (Binary) cũng từ node Lấy PDF Base64 luôn\n// Vì node \"Lưu PDF vào Database\" ngay phía trước đã làm mất binary rồi\nconst pdfFile = $('Lấy PDF Base64').item.binary.data;\n\nreturn {\n  json: fullData,\n  binary: {\n    data: pdfFile\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        144
+      ],
+      "id": "0c122112-2685-43db-b098-5300b31d7da3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ '🔑 Bàn giao phòng ' + $json.phong + ' & Tài khoản hệ thống' }}",
+        "message": "=<div style='font-family:Arial,sans-serif;max-width:600px'><div style='background:#1e40af;padding:24px;border-radius:12px 12px 0 0'><h2 style='color:white;margin:0'>🏠 Chúc mừng bạn đã nhận phòng!</h2></div><div style='background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0'><p>Xin chào <strong>{{ $json.hoTen }}</strong>,</p><p>Phòng <b>{{ $json.phong }}</b> của bạn đã được bàn giao thành công. Chúc bạn có những trải nghiệm tuyệt vời tại đây.</p><div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0'><b style='color:#1e40af'>📋 Thông tin tiện ích</b><br><br>📶 Wifi: <b>CLM_Network_5G</b><br>🔓 Mật khẩu Wifi: <b>68686868</b><br>📝 Quý khách nhớ đọc kỹ Nội quy phòng trọ đính kèm trên Website để tránh bị phạt nhé!</div><div style='background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:16px;margin:16px 0'><b style='color:#854d0e'>🔑 Tài khoản đăng nhập App</b><br><br>🌐 Website: <a href='http://localhost:3000'>http://localhost:3000</a><br>📧 Email: <b>{{ $json.tenDangNhap }}</b><br>🔒 Mật khẩu: <code style='background:#fff;padding:2px 8px;border-radius:4px'>{{ $json.matKhau }}</code><br><small style='color:#dc2626'>⚠️ Vui lòng đổi mật khẩu ngay sau lần đăng nhập đầu tiên!</small></div><p style='color:#64748b;font-size:12px;margin-top:20px'>Trân trọng,<br><b>Ban Quản Lý CLM</b></p></div></div>",
+        "options": {}
+      },
+      "id": "ec28242d-79b6-4ab0-8ccc-a2ac67acf6a7",
+      "name": "Mail: Cấp Account",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1056,
+        736
+      ],
+      "webhookId": "a8f3143d-fdd5-4959-848d-5f51135ef65b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ban-giao-phong",
+        "options": {}
+      },
+      "id": "a37f3dd8-352d-4c56-9b5f-1037e3a57491",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        576
+      ],
+      "webhookId": "ef46ae75-e507-4e18-8358-e513520748c6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Lấy dữ liệu thô từ Webhook\nconst raw = $input.item.json;\n\n// 2. Tự động tìm tầng sâu nhất chứa dữ liệu (xử lý lỗi double body)\nconst data = (raw.body && raw.body.body) ? raw.body.body : (raw.body || raw);\n\nconst binaryData = {};\n\nfunction cleanB64(s) { \n  return (s && typeof s === 'string' && s.includes(',')) ? s.split(',')[1] : s; \n}\n\n// 3. Xử lý CCCD Trước\nif (data.cccdTruoc) {\n  binaryData.cccdTruoc = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(data.cccdTruoc), 'base64'),\n    `CCCD_Truoc_P${data.phong || 'unknown'}.jpg`,\n    'image/jpeg'\n  );\n}\n\n// 4. Xử lý CCCD Sau\nif (data.cccdSau) {\n  binaryData.cccdSau = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(data.cccdSau), 'base64'),\n    `CCCD_Sau_P${data.phong || 'unknown'}.jpg`,\n    'image/jpeg'\n  );\n}\n\n// 5. Xử lý PDF Hợp đồng\nif (data.pdfBase64) {\n  binaryData.pdfFile = await this.helpers.prepareBinaryData(\n    Buffer.from(cleanB64(data.pdfBase64), 'base64'),\n    `HopDong_P${data.phong || 'unknown'}.pdf`,\n    'application/pdf'\n  );\n}\n\n// 6. Trả về kết quả sạch sẽ cho các node sau\nreturn { json: data, binary: binaryData };\n"
+      },
+      "id": "3458935c-6efc-46bd-8c88-c575b3d810fb",
+      "name": "Xử lý Base64 sang File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6126814953",
+        "text": "=✅ BÀN GIAO PHÒNG MỚI:\n🏠 Phòng: {{ $json.phong }}\n👤 Khách: {{ $json.hoTen }}\n📞 SĐT: {{ $json.sdt }}\n🤖 Bot đang gửi hồ sơ đính kèm...",
+        "additionalFields": {}
+      },
+      "id": "b232106e-9248-460a-a7fb-b18dc76c053f",
+      "name": "Tele: Báo cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        384
+      ],
+      "webhookId": "b41e53f9-b1fc-4b8d-8b87-a1e06f38e1be",
+      "credentials": {
+        "telegramApi": {
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "binaryPropertyName": "cccdTruoc",
+        "additionalFields": {}
+      },
+      "id": "b986cf10-fdba-46e2-a1c9-a32b455f34c8",
+      "name": "Tele: CCCD Trước",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        480
+      ],
+      "webhookId": "75f0aec1-7e61-442d-9bfb-a586065c7035",
+      "credentials": {
+        "telegramApi": {
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "binaryPropertyName": "cccdSau",
+        "additionalFields": {}
+      },
+      "id": "b7618dd8-1236-4cc5-a2fc-50205f7b5a1d",
+      "name": "Tele: CCCD Sau",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        576
+      ],
+      "webhookId": "30b08400-5fee-4a17-8b9a-84a60058f4cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "binaryPropertyName": "pdfFile",
+        "additionalFields": {}
+      },
+      "id": "1e7e382a-b1b3-4c94-8259-e2c822e86a95",
+      "name": "Tele: PDF Hợp Đồng",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        672
+      ],
+      "webhookId": "4a120dbe-564a-43de-bb1c-57d78afe7dad",
+      "credentials": {
+        "telegramApi": {
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.ma_phong AS phong, '{{ $json.chiSoDienMoi }}'::numeric AS \"chiSoDienMoi\", 'AI_OCR_ADMIN' AS nguon, c.gia_thue_chot AS \"tienPhong\", t.ho_ten AS \"hoTen\", t.email AS \"email\", COALESCE((SELECT chi_so_dien_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1), 0) AS \"chiSoDienCu\", COALESCE((SELECT chi_so_nuoc_moi FROM utility_bills WHERE room_id = r.id ORDER BY id DESC LIMIT 1), 0) AS \"chiSoNuocCu\" FROM rooms r JOIN contracts c ON r.id = c.room_id JOIN tenants t ON c.tenant_id = t.id WHERE r.ma_phong = '{{ $json.phong }}' AND c.trang_thai = 'Hiệu lực' LIMIT 1;",
+        "options": {}
+      },
+      "id": "17461247-ba7f-4362-acfe-57086bf6a418",
+      "name": "Lấy Tiền Nhà & Điện Cũ",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1168,
+        1216
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "id": "0ef1c897-b0bb-4323-a4c3-ddb94e48b497",
+      "name": "gửi ảnh Telegram",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2048,
+        1216
+      ],
+      "webhookId": "6769407f-6c79-4724-b5e4-8720e19d92d1",
+      "credentials": {
+        "telegramApi": {
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Chuyển đổi Binary Telegram sang mã Base64 chuẩn\nconst binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\nreturn {\n  json: {\n    imageBase64: binaryData.toString('base64')\n  }\n};"
+      },
+      "id": "3429c448-c337-4b6e-a202-e01d6dbca309",
+      "name": "Chuyển ảnh sang Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1840,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{GROQ_API_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"meta-llama/llama-4-scout-17b-16e-instruct\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Đây là ảnh chụp công tơ điện. Hãy nhìn vào ô hiển thị chỉ số chính (thường nằm cạnh chữ kWh) và cho tôi biết con số hiện tại là bao nhiêu. Trả về kết quả dưới dạng JSON: {\\\"chiSoDien\\\": 123}\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:image/jpeg;base64,{{ $json.imageBase64 }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"response_format\": { \"type\": \"json_object\" }\n}\n",
+        "options": {}
+      },
+      "id": "e0c2fe40-022c-42a9-94bb-c195f8b223a2",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -1632,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\ntry {\n  // Lấy dữ liệu từ Groq (Nằm trong choices[0].message.content)\n  const groqOutput = $json.choices[0].message.content;\n  \n  let chiSoMoi = 0;\n  try {\n    const jsonMatch = groqOutput.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      const parsed = JSON.parse(jsonMatch[0]);\n      chiSoMoi = parsed.chiSoDien || 0;\n    } else {\n      const match = groqOutput.match(/\\d+/);\n      chiSoMoi = match ? Number(match[0]) : 0;\n    }\n  } catch (e) {\n    const match = groqOutput.match(/\\d+/);\n    chiSoMoi = match ? Number(match[0]) : 0;\n  }\n  \n  const caption = $('gửi ảnh Telegram').item.json.message.caption || '';\n  // Thay đoạn regex cũ bằng đoạn này để lấy cả chữ cái (ví dụ: P101)\n  const matchPhong = caption.match(/(?:#|Phòng\\s*)?([A-Z]*\\d{3,4})/i);\n  const phong = matchPhong ? matchPhong[1] : '???';\n\n  \n  if (phong === '???') throw new Error(\"Lỗi: Bạn chưa ghi mã phòng ở phần Caption (ví dụ: P101)\");\n\n  return {\n    json: {\n      phong: phong,\n      chiSoDienMoi: chiSoMoi,\n      nguon: \"AI_GROQ_ADMIN\",\n      ai_raw: groqOutput\n    }\n  };\n} catch (error) {\n  throw new Error(\"Lỗi xử lý dữ liệu AI Groq: \" + error.message);\n}\n"
+      },
+      "id": "63805421-d478-4274-b7ad-6f152f6509d8",
+      "name": "Bóc tách Dữ liệu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1392,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "is_auto",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "88d07415-95ca-479a-898c-4d53ccb45a19",
+      "name": "Manual: Set Flag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -944,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chot-dien-nuoc",
+        "options": {}
+      },
+      "id": "dd73b23c-2a63-4e07-9eb1-085b24bc57a0",
+      "name": "Webhook (Chốt tay)1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        1008
+      ],
+      "webhookId": "9180ca77-47a2-4ed4-a712-acfa9b297ebe"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "6126814953",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=🚀 [BÁO CÁO HÓA ĐƠN GỘP]\n🏠 Phòng: {{ $('2. Tính Toán & VietQR').item.json.phong }}\n💸 Tổng tiền: {{ $('2. Tính Toán & VietQR').item.json.txt_tong }}\n✅ Trạng thái: Hoàn tất chốt sổ."
+        }
+      },
+      "id": "ac44c3c8-097b-43a6-abdb-f2fdcd62cb7c",
+      "name": "7. Tele: Báo cáo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        1168
+      ],
+      "webhookId": "361d59f0-62c5-4a54-9f57-1f8e4f7df4d7",
+      "credentials": {
+        "telegramApi": {
+          "id": "CdrGgSoWjWTjnMdl",
+          "name": "Tele của huy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/bills/save",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phong",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.phong }}"
+            },
+            {
+              "name": "tong_tien",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.val_tong }}"
+            },
+            {
+              "name": "pdf_base64",
+              "value": "={{ $json.pdfBase64 }}"
+            },
+            {
+              "name": "qr_url",
+              "value": "={{ $('API Lấy QR PayOS').item.json.qr_image_url || $('2. Tính Toán & VietQR').item.json.qrUrl }}"
+            },
+            {
+              "name": "thang_nam",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}"
+            },
+            {
+              "name": "chi_so_dien_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_moi }}"
+            },
+            {
+              "name": "chi_so_dien_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_moi }}"
+            },
+            {
+              "name": "payos_order_code",
+              "value": "={{ $('API Lấy QR PayOS').item.json.payos_order_code }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0a02fac0-ef69-411e-8d9f-964bd9103ce5",
+      "name": "6. Lưu Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        720,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const fileBuffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst pdfBase64 = fileBuffer.toString('base64');\nconst info = $('2. Tính Toán & VietQR').item.json;\n\nreturn {\n  json: { ...info, pdfBase64 },\n  binary: {\n    data: await this.helpers.prepareBinaryData(fileBuffer, `HoaDon_P${info.phong}.pdf`, 'application/pdf')\n  }\n};\n"
+      },
+      "id": "cde59a26-63e5-4b86-9495-5da5633c52cb",
+      "name": "5. Đóng gói PDF & Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "e0776f3f-4bc5-4fbb-a64e-f20b49a7b058",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://gotenberg:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "indexHtml"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eb562fee-54cb-48d3-b962-64d9914a8039",
+      "name": "4. Gotenberg (PDF)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        64,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('2. Tính Toán & VietQR').item.json;\nconst payos = $('API Lấy QR PayOS').item.json;\nconst qrUrl = payos.qr_image_url || d.qrUrl;\n\nconst html = `<!DOCTYPE html>\n<html lang=\"vi\">\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 40px; color: #333; }\n        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 16px; line-height: 24px; }\n        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 20px; }\n        .header h1 { margin: 0; color: #1e40af; font-size: 32px; }\n        .info-table { width: 100%; margin-bottom: 30px; }\n        .info-table td { padding: 5px; }\n        .billing-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }\n        .billing-table th, .billing-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }\n        .billing-table th { background-color: #f8fafc; color: #1e40af; font-weight: bold; }\n        .total-row { font-size: 18px; font-weight: bold; background-color: #e2e8f0; }\n        .total-row td { color: #dc2626; text-align: right; }\n        .footer { text-align: center; margin-top: 40px; font-size: 14px; color: #666; }\n        .qr-container { text-align: center; margin-top: 20px; }\n        .qr-container img { border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: white; }\n    </style>\n</head>\n<body>\n    <div class=\"invoice-box\">\n        <div class=\"header\">\n            <div>\n                <h1>HÓA ĐƠN THANH TOÁN</h1>\n                <p>Kỳ cước: Tháng ${d.thangDisplay}</p>\n            </div>\n            <div style=\"text-align: right;\">\n                <h2 style=\"margin: 0; color: #dc2626;\">Phòng: ${d.phong}</h2>\n            </div>\n        </div>\n        \n        <table class=\"info-table\">\n            <tr>\n                <td><strong>Khách hàng:</strong> ${d.hoTen}</td>\n                <td style=\"text-align: right;\"><strong>Ngày lập:</strong> ${new Date().toLocaleDateString('vi-VN')}</td>\n            </tr>\n        </table>\n\n        <table class=\"billing-table\">\n            <thead>\n                <tr>\n                    <th>Hạng mục</th>\n                    <th>Chỉ số đầu</th>\n                    <th>Chỉ số cuối</th>\n                    <th style=\"text-align: right;\">Thành tiền</th>\n                </tr>\n            </thead>\n            <tbody>\n                <tr>\n                    <td>Tiền thuê phòng</td>\n                    <td>-</td>\n                    <td>-</td>\n                    <td style=\"text-align: right;\">${d.txt_phong}</td>\n                </tr>\n                <tr>\n                    <td>Tiền điện</td>\n                    <td>${d.chi_so_dien_cu}</td>\n                    <td>${d.chi_so_dien_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_dien || 'Tính gộp'}</td>\n                </tr>\n                <tr>\n                    <td>Tiền nước</td>\n                    <td>${d.chi_so_nuoc_cu}</td>\n                    <td>${d.chi_so_nuoc_moi}</td>\n                    <td style=\"text-align: right;\">${d.txt_nuoc || 'Tính gộp'}</td>\n                </tr>\n                <tr class=\"total-row\">\n                    <td colspan=\"3\" style=\"text-align: right;\">TỔNG CỘNG:</td>\n                    <td>${d.txt_tong}</td>\n                </tr>\n            </tbody>\n        </table>\n\n        <div class=\"qr-container\">\n            <h3>Quét mã QR để thanh toán nhanh</h3>\n            <img src=\"${qrUrl}\" alt=\"PayOS QR\" width=\"250\" />\n            <p>Nội dung CK: <strong>P${d.phong}</strong></p>\n            ${payos.checkout_url ? `<p><a href=\"${payos.checkout_url}\" style=\"display: inline-block; padding: 10px 20px; background-color: #1e40af; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;\">Mở trang thanh toán</a></p>` : ''}\n        </div>\n\n        <div class=\"footer\">\n            <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>\n            <p>Mọi thắc mắc xin vui lòng liên hệ Ban Quản Lý CLM.</p>\n        </div>\n    </div>\n</body>\n</html>`;\nreturn {\n  json: { ...d, qrUrl },\n  binary: {\n    indexHtml: await this.helpers.prepareBinaryData(Buffer.from(html), 'index.html', 'text/html')\n  }\n};\n"
+      },
+      "id": "ab2b6181-2fba-456a-89a9-2278bd25b1bd",
+      "name": "3. Dàn trang HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $input.item.json;\nconst isAI = input.nguon === \"AI_OCR_ADMIN\" || input.nguon === \"AI_GEMINI_ADMIN\";\n\nfunction getV(key) {\n    if (input[key] !== undefined && input[key] !== null) return input[key];\n    if (input.body && input.body[key] !== undefined) return input.body[key];\n    return 0; \n}\n\nconst phong = getV('phong') || getV('ma_phong') || \"?\";\nconst hoTen = getV('hoTen') || getV('ho_ten') || \"Khách hàng\";\nconst email = getV('email') || \"clm@example.com\";\n\nconst today = new Date();\nconst thangNam = getV('thangNam') || getV('thang_nam') || `${today.getMonth() + 1}/${today.getFullYear()}`;\n\nlet baseRent = Number(getV('tienPhong') || getV('tien_phong') || 0);\nlet tongTuReact = Number(getV('tongTien') || getV('tong_tien') || 0);\n\nlet val_dien = 0;\nlet val_nuoc = 0;\nlet finalTotal = 0;\n\nif (tongTuReact > 0 && !isAI) {\n    baseRent = tongTuReact;\n    finalTotal = tongTuReact;\n} else {\n    const sd = Number(getV('chiSoDienMoi')) - Number(getV('chiSoDienCu'));\n    const sn = Number(getV('chiSoNuocMoi')) - Number(getV('chiSoNuocCu'));\n\n    val_dien = Math.max(0, sd * 10); \n    val_nuoc = Math.max(0, sn * 100000); \n\n    finalTotal = baseRent + val_dien + val_nuoc;\n}\n\nconst fmt = (v) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';\n\nreturn {\n    json: {\n        ...input, \n        phong, hoTen, email,\n        is_auto: false,\n        val_phong: baseRent,\n        val_tong: finalTotal,\n        txt_phong: fmt(baseRent),\n        txt_tong: fmt(finalTotal),\n        txt_dien: fmt(val_dien),\n        txt_nuoc: fmt(val_nuoc),\n        thangDisplay: thangNam,\n        qrUrl: `https://img.vietqr.io/image/MB-0905881525-compact2.png?amount=${finalTotal}&addInfo=ThanhToan_P${phong}&accountName=HUYNH%20NGOC%20HUY`,\n        chi_so_dien_cu: Number(getV('chiSoDienCu')),\n        chi_so_dien_moi: Number(getV('chiSoDienMoi')),\n        chi_so_nuoc_cu: Number(getV('chiSoNuocCu')),\n        chi_so_nuoc_moi: Number(getV('chiSoNuocMoi'))\n    }\n};\n"
+      },
+      "id": "9fece268-02c1-4063-9c63-40506a5b3219",
+      "name": "2. Tính Toán & VietQR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('2. Tính Toán & VietQR').item.json.email }}",
+        "subject": "=Hóa đơn tiền nhà P.{{ $('2. Tính Toán & VietQR').item.json.phong }} - Tháng {{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}",
+        "message": "=<div style='font-family:Arial,sans-serif; max-width:600px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;'>\n  <div style='background:#1e40af; padding:20px; color:white; text-align:center;'>\n    <h2 style='margin:0;'>HÓA ĐƠN P.{{ $('2. Tính Toán & VietQR').item.json.phong }}</h2>\n  </div>\n  \n  <div style='padding:24px; background:#f8fafc;'>\n    <p>Xin chào <strong>{{ $('2. Tính Toán & VietQR').item.json.hoTen }}</strong>,</p>\n    \n    <p>Ban quản lý gửi bạn thông báo thanh toán cho kỳ <strong>{{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}</strong>, bao gồm:</p>\n    <ul style='color:#334155;'>\n      <li><b>Tiền nhà:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_phong }}</li>\n      <li><b>Tiền điện:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_dien || 'Tính theo thực tế' }}</li>\n      <li><b>Tiền nước:</b> {{ $('2. Tính Toán & VietQR').item.json.txt_nuoc || 'Tính theo thực tế' }}</li>\n    </ul>\n\n    <div style='background:white; border:2px dashed #1e40af; padding:15px; text-align:center; margin:20px 0;'>\n      <span style='font-size:14px; color:#64748b;'>TỔNG SỐ TIỀN CẦN THANH TOÁN</span><br>\n      <b style='font-size:24px; color:#dc2626;'>{{ $('2. Tính Toán & VietQR').item.json.txt_tong }}</b>\n    </div>\n\n    <p style='font-size:13px; color:#64748b; font-style:italic;'>* Chi tiết chỉ số và QR thanh toán, vui lòng xem trong file PDF đính kèm.</p>\n    \n    <hr style='border:0; border-top:1px solid #e2e8f0; margin:20px 0;'>\n    <p style='color:#1e40af; font-weight:bold; margin:0;'>Trân trọng,<br>Ban Quản Lý CLM</p>\n  </div>\n</div>\n",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "id": "a12e6013-473d-49a6-8cfa-bcb454141fe2",
+      "name": "Gửi Mail Hóa Đơn",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        976,
+        1008
+      ],
+      "webhookId": "73f26785-48d8-4bd3-ab1f-6a0959b8b773",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mHOp1T0AYAe7EoTv",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/bills/draft-and-qr",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phong",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.phong }}"
+            },
+            {
+              "name": "tong_tien",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.val_tong }}"
+            },
+            {
+              "name": "thang_nam",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.thangDisplay }}"
+            },
+            {
+              "name": "chi_so_dien_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_moi }}"
+            },
+            {
+              "name": "chi_so_dien_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_dien_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_cu",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_cu }}"
+            },
+            {
+              "name": "chi_so_nuoc_moi",
+              "value": "={{ $('2. Tính Toán & VietQR').item.json.chi_so_nuoc_moi }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "30693559-918d-47c4-8f68-dea6e3a82f69",
+      "name": "API Lấy QR PayOS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -384,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    table_name, \n    column_name, \n    data_type \nFROM information_schema.columns \nWHERE table_schema = 'public' \nORDER BY table_name, ordinal_position;\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        592
+      ],
+      "id": "86f2bd43-60e1-4927-a2b9-03027a9c1a66",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "DWwicrJcvSj795aW",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook (FastAPI gọi)": {
+      "main": [
+        [
+          {
+            "node": "Format & Tạo HTML Hợp Đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format & Tạo HTML Hợp Đồng": {
+      "main": [
+        [
+          {
+            "node": "HTML String → Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML String → Binary File": {
+      "main": [
+        [
+          {
+            "node": "Gotenberg: HTML → PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gotenberg: HTML → PDF": {
+      "main": [
+        [
+          {
+            "node": "Lấy PDF Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy PDF Base64": {
+      "main": [
+        [
+          {
+            "node": "Lưu PDF vào Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu PDF vào Database": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Mail + PDF Hợp Đồng": {
+      "main": [
+        [
+          {
+            "node": "Báo cáo Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Gửi Mail + PDF Hợp Đồng",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Xử lý Base64 sang File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xử lý Base64 sang File": {
+      "main": [
+        [
+          {
+            "node": "Tele: Báo cáo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: CCCD Trước",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: CCCD Sau",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tele: PDF Hợp Đồng",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mail: Cấp Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy Tiền Nhà & Điện Cũ": {
+      "main": [
+        [
+          {
+            "node": "Manual: Set Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gửi ảnh Telegram": {
+      "main": [
+        [
+          {
+            "node": "Chuyển ảnh sang Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuyển ảnh sang Base64": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Bóc tách Dữ liệu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bóc tách Dữ liệu": {
+      "main": [
+        [
+          {
+            "node": "Lấy Tiền Nhà & Điện Cũ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual: Set Flag": {
+      "main": [
+        [
+          {
+            "node": "2. Tính Toán & VietQR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Chốt tay)1": {
+      "main": [
+        [
+          {
+            "node": "Manual: Set Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Đóng gói PDF & Base64": {
+      "main": [
+        [
+          {
+            "node": "7. Tele: Báo cáo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "6. Lưu Database",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gửi Mail Hóa Đơn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "5. Đóng gói PDF & Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Gotenberg (PDF)": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "3. Dàn trang HTML": {
+      "main": [
+        [
+          {
+            "node": "4. Gotenberg (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Tính Toán & VietQR": {
+      "main": [
+        [
+          {
+            "node": "API Lấy QR PayOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Lấy QR PayOS": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "3. Dàn trang HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99b801ad2317bd8fa417b21134ca8050bf3a38b35681c8d7793c3b6c4072a11b"
+  }
+}
