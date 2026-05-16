@@ -12,7 +12,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        1120,
+        1200,
         96
       ],
       "webhookId": "9c15f1bc-1377-48a2-8ba5-610be6fea57d"
@@ -27,7 +27,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1376,
+        1584,
         96
       ]
     },
@@ -43,7 +43,7 @@
       "type": "n8n-nodes-base.crypto",
       "typeVersion": 1,
       "position": [
-        1584,
+        1792,
         96
       ]
     },
@@ -64,7 +64,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1776,
+        1984,
         96
       ]
     },
@@ -81,7 +81,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1984,
+        2192,
         224
       ]
     },
@@ -95,7 +95,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1984,
+        2192,
         -16
       ]
     },
@@ -110,7 +110,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2224,
+        2432,
         -16
       ],
       "credentials": {
@@ -149,7 +149,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2432,
+        2640,
         -16
       ]
     },
@@ -166,7 +166,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2624,
+        2832,
         128
       ]
     },
@@ -181,7 +181,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2656,
+        2864,
         -112
       ],
       "credentials": {
@@ -204,7 +204,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        2912,
+        3120,
         -112
       ],
       "webhookId": "8193ec77-44a5-4fb9-b36b-cafdf0203f7e",
@@ -226,9 +226,42 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3168,
+        3376,
         -112
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d5d4b3e7-f46f-4c39-88d9-7c2aa57cd4eb",
+              "leftValue": "={{ $json.body.data.description.toLowerCase() }}",
+              "rightValue": "hd",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1376,
+        96
+      ],
+      "id": "d8f496be-b142-427a-961e-3f9651200d2c",
+      "name": "Filter"
     }
   ],
   "connections": {
@@ -236,7 +269,7 @@
       "main": [
         [
           {
-            "node": "Tạo chuỗi xác thực",
+            "node": "Filter",
             "type": "main",
             "index": 0
           }
@@ -339,6 +372,17 @@
         [
           {
             "node": "Trả kết quả phản hồi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Tạo chuỗi xác thực",
             "type": "main",
             "index": 0
           }

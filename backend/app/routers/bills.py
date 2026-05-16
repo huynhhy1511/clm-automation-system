@@ -241,7 +241,7 @@ async def draft_and_qr(
         payment_data = CreatePaymentLinkRequest(
             orderCode=bill.payos_order_code,
             amount=int(bill.tong_tien),
-            description=f"ThanhToan_{room.ma_phong}",
+            description=f"ThanhToan {room.ma_phong}",
             cancelUrl=settings.PAYOS_CANCEL_URL,
             returnUrl=settings.PAYOS_RETURN_URL
         )
@@ -251,7 +251,7 @@ async def draft_and_qr(
             qr_code_str = getattr(payment_response, 'qrCode', '')
             if qr_code_str:
                 import urllib.parse
-                qr_image_url = f"https://chart.googleapis.com/chart?chs=400x400&cht=qr&chl={urllib.parse.quote(qr_code_str)}&choe=UTF-8"
+                qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(qr_code_str)}"
         except Exception as e:
             logger.error(f"PayOS API Error: {e}")
 
