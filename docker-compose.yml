@@ -48,7 +48,7 @@ services:
       - .env
     environment:
       # Link kết nối từ BE sang DB (nhìn kỹ tên user, pass, db trùng với ở trên)
-      - DATABASE_URL=postgresql://admin:adminpassword@postgres:5432/clm_system_db
+      - DATABASE_URL=postgresql+asyncpg://admin:adminpassword@postgres:5432/clm_system_db
 
   # 3. Thùng chứa Frontend (React)
   frontend:
