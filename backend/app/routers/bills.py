@@ -247,13 +247,16 @@ async def draft_and_qr(
         )
         try:
             payment_response = await payos.payment_requests.create(payment_data)
-            checkout_url = getattr(payment_response, 'checkoutUrl', '')
-            qr_code_str = getattr(payment_response, 'qrCode', '')
+            # Thử lấy cả 2 kiểu snake_case và camelCase để đảm bảo không bị hụt dữ liệu
+            checkout_url = getattr(payment_response, 'checkout_url', getattr(payment_response, 'checkoutUrl', ''))
+            qr_code_str = getattr(payment_response, 'qr_code', getattr(payment_response, 'qrCode', ''))
+            
             if qr_code_str:
                 import urllib.parse
                 qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={urllib.parse.quote(qr_code_str)}"
+                logger.info(f"PayOS Link Created: {checkout_url}")
         except Exception as e:
-            logger.error(f"PayOS API Error: {e}")
+            logger.error(f"PayOS API Error for Room {payload.phong}: {e}")
 
     return {
         "bill_id": bill.id,
